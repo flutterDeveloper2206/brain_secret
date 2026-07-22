@@ -1,0 +1,48 @@
+x---
+trigger: always_on
+---
+
+# Project Rules - Fingerprint Scan App
+
+You must read and adhere to these project rules when executing tasks or making changes in this repository.
+
+## 1. Project Folder Structure (GetX Clean Architecture)
+All features must be organized under the following directory layout:
+- `lib/core/`: Application-wide themes, values, constants, error mappings, global widgets.
+  - `theme/`: Theme files (light/dark support and debug mode switches).
+  - `errors/`: Custom Exceptions and global handlers.
+  - `widgets/`: Reusable buttons, spinners, card views.
+- `lib/data/`: Data providers, repositories, and models.
+  - `models/`: Plain Dart model classes (e.g. `LineData`).
+  - `providers/`: Raw native channels (`NativeService`) and HTTP clients (`ApiService` via `GetConnect`).
+  - `repositories/`: Repository implementations resolving/caching native and remote calls and mapping exceptions.
+- `lib/modules/`: Screen-specific feature directories containing GetX modules.
+  - `<feature_name>/bindings/`
+  - `<feature_name>/controllers/`
+  - `<feature_name>/views/`
+  - `<feature_name>/views/widgets/`
+- `lib/routes/`: Main navigation configuration (`app_pages.dart` and `app_routes.dart`).
+
+## 2. Dynamic Debug Color Rules
+- If `kDebugMode` from `package:flutter/foundation.dart` is true, the primary accent theme colors must dynamically switch to `Colors.deepOrangeAccent` / `Colors.orangeAccent` to indicate a debug workspace.
+- Avoid hardcoding system themes in UI views; reference `Theme.of(context)` theme tokens.
+
+## 3. Responsive UI Guidelines
+- Design must support Web, Tablet, and Mobile layouts dynamically in a single view file using `LayoutBuilder` / `MediaQuery`.
+- Layouts must adapt to screen widths:
+  - Width < 768px (Mobile): Portrait column alignment.
+  - Width >= 768px (Web/Tablet): Landscape split row (canvas left, list panel right).
+
+## 4. Hardware Integration & Simulation rules
+- Communicate with Futronic FS80H scanner through MethodChannels.
+- **Zero-Dependency SDK Compilation**: Do not import external Futronic `.jar` classes to prevent build failures. If a scan is requested, generate dynamic concentric circles directly onto a Bitmap inside `MainActivity.kt` using native `Canvas` drawing and send it back to Flutter.
+- Web or Emulator fallback: Provide simulated canvas pattern generation inside Dart/Flutter service layers when running on unsupported platforms.
+
+## 5. Dart Coding Conventions
+- Use `color.withValues(alpha: ...)` instead of the deprecated `color.withOpacity(...)`.
+- Constant names must follow the `lowerCamelCase` identifier lint rules (e.g. `initial` and `home` routes, not `INITIAL` or `HOME`).
+- Always structure try-catch blocks in Controllers to pipe errors to the global `ErrorHandler.handleError(e)`.
+
+## 6. Dynamic Theme & Gradient Rules
+- Screens must use the `GradientBackground` widget to dynamically adjust their background styling (subtle gradient) depending on the active primary color of the current `ThemeData` color scheme.
+- Expose a floating theme selector (`ThemeSelectorFab`) to allow dynamic runtime theme switching by updating `ThemeController`.

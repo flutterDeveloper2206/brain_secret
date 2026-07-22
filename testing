@@ -1,0 +1,588 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter/services.dart';
+
+void main() {
+  runApp(const RidgeCounterApp());
+}
+
+class RidgeCounterApp extends StatelessWidget {
+  const RidgeCounterApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Fingerprint Ridge Counter',
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        primaryColor: const Color(0xFF2196F3),
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        cardColor: const Color(0xFF1E1E1E),
+        useMaterial3: true,
+      ),
+      home: const RidgeCounterHome(),
+    );
+  }
+}
+
+class LineData {
+  final String id;
+  final Offset start; // Canvas coordinates
+  Offset end; // Canvas coordinates
+  final Color color;
+  int? ridgeCount;
+
+  LineData({
+    required this.id,
+    required this.start,
+    required this.end,
+    required this.color,
+    this.ridgeCount,
+  });
+}
+
+class RidgeCounterHome extends StatefulWidget {
+  const RidgeCounterHome({super.key});
+
+  @override
+  State<RidgeCounterHome> createState() => _RidgeCounterHomeState();
+}
+
+class _RidgeCounterHomeState extends State<RidgeCounterHome> {
+  static const platform = MethodChannel(
+    'com.example.finger_print_scan/ridge_counting',
+  );
+
+  File? _imageFile;
+  ui.Image? _originalImage;
+  ui.Image? _processedImage;
+  bool _showProcessed = true;
+  bool _isProcessingImage = false;
+
+  Offset? _corePoint;
+  List<LineData> _lines = [];
+  LineData? _currentLine;
+
+  final ImagePicker _picker = ImagePicker();
+
+  // To handle coordinate mapping
+  Size? _canvasSize;
+  Size? _imageOriginalSize;
+  Rect? _imageDestRect;
+
+  Future<void> _pickImage() async {
+    final XFile? pickedFile = await _picker.pickImage(
+      source: ImageSource.gallery,
+    );
+    if (pickedFile != null) {
+      setState(() {
+        _isProcessingImage = true;
+        _imageFile = File(pickedFile.path);
+        _corePoint = null;
+        _lines = [];
+        _currentLine = null;
+      });
+
+      try {
+        final File file = File(pickedFile.path);
+        final Uint8List originalBytes = await file.readAsBytes();
+        final ui.Image original = await decodeImageFromList(originalBytes);
+
+        // Call native processing to get the "cleared" image
+        final Uint8List processedBytes = await platform.invokeMethod(
+          'processImage',
+          {'imagePath': pickedFile.path},
+        );
+        final ui.Image processed = await decodeImageFromList(processedBytes);
+
+        setState(() {
+          _originalImage = original;
+          _processedImage = processed;
+          _imageOriginalSize = Size(
+            original.width.toDouble(),
+            original.height.toDouble(),
+          );
+          _isProcessingImage = false;
+          _showProcessed = true;
+        });
+      } catch (e) {
+        debugPrint("Error processing image in native: $e");
+        setState(() {
+          _isProcessingImage = false;
+        });
+      }
+    }
+  }
+
+  void _toggleView() {
+    setState(() {
+      _showProcessed = !_showProcessed;
+    });
+  }
+
+  void _resetCore() {
+    setState(() {
+      _corePoint = null;
+      _lines = [];
+    });
+  }
+
+  void _clearLines() {
+    setState(() {
+      _lines = [];
+    });
+  }
+
+  Future<void> _calculateRidgeCount(LineData line) async {
+    if (_imageFile == null ||
+        _processedImage == null ||
+        _imageDestRect == null ||
+        _imageOriginalSize == null)
+      return;
+
+    double scaleX = _imageOriginalSize!.width / _imageDestRect!.width;
+    double scaleY = _imageOriginalSize!.height / _imageDestRect!.height;
+
+    double imgStartX = (line.start.dx - _imageDestRect!.left) * scaleX;
+    double imgStartY = (line.start.dy - _imageDestRect!.top) * scaleY;
+    double imgEndX = (line.end.dx - _imageDestRect!.left) * scaleX;
+    double imgEndY = (line.end.dy - _imageDestRect!.top) * scaleY;
+
+    try {
+      final int count = await platform.invokeMethod('countRidges', {
+        'imagePath': _imageFile!.path,
+        'coreX': imgStartX,
+        'coreY': imgStartY,
+        'endX': imgEndX,
+        'endY': imgEndY,
+      });
+
+      setState(() {
+        line.ridgeCount = count;
+      });
+    } on PlatformException catch (e) {
+      debugPrint("Failed to count ridges: '${e.message}'.");
+    }
+  }
+
+  Color _getNextColor() {
+    final colors = [
+      Colors.redAccent,
+      Colors.greenAccent,
+      Colors.orangeAccent,
+      Colors.purpleAccent,
+      Colors.yellowAccent,
+      Colors.cyanAccent,
+      Colors.pinkAccent,
+      Colors.limeAccent,
+    ];
+    return colors[_lines.length % colors.length];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Fingerprint Analysis'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          if (_originalImage != null && _processedImage != null)
+            TextButton.icon(
+              onPressed: _toggleView,
+              icon: Icon(
+                _showProcessed ? Icons.visibility : Icons.auto_awesome,
+              ),
+              label: Text(_showProcessed ? 'Show Original' : 'Show Cleared'),
+              style: TextButton.styleFrom(foregroundColor: Colors.white70),
+            ),
+          const SizedBox(width: 8),
+          TextButton.icon(
+            onPressed: _resetCore,
+            icon: const Icon(Icons.center_focus_strong, size: 18),
+            label: const Text('Reset Core'),
+            style: TextButton.styleFrom(foregroundColor: Colors.blue),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            flex: 4,
+            child: Container(
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.5),
+                    blurRadius: 10,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: _isProcessingImage
+                  ? const Center(child: CircularProgressIndicator())
+                  : (_originalImage == null)
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.fingerprint,
+                            size: 80,
+                            color: Colors.blue.withOpacity(0.5),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: _pickImage,
+                            icon: const Icon(Icons.image),
+                            label: const Text('Pick Fingerprint Image'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        _canvasSize = Size(
+                          constraints.maxWidth,
+                          constraints.maxHeight,
+                        );
+
+                        // Calculate destination rect like BoxFit.contain
+                        double imgAspect =
+                            _imageOriginalSize!.width /
+                            _imageOriginalSize!.height;
+                        double canvasAspect =
+                            _canvasSize!.width / _canvasSize!.height;
+
+                        double drawW, drawH;
+                        if (imgAspect > canvasAspect) {
+                          drawW = _canvasSize!.width;
+                          drawH = drawW / imgAspect;
+                        } else {
+                          drawH = _canvasSize!.height;
+                          drawW = drawH * imgAspect;
+                        }
+
+                        _imageDestRect = Rect.fromLTWH(
+                          (_canvasSize!.width - drawW) / 2,
+                          (_canvasSize!.height - drawH) / 2,
+                          drawW,
+                          drawH,
+                        );
+
+                        return GestureDetector(
+                          onTapDown: (details) {
+                            if (_corePoint == null) {
+                              setState(() {
+                                _corePoint = details.localPosition;
+                              });
+                            }
+                          },
+                          onPanStart: (details) {
+                            if (_corePoint != null) {
+                              setState(() {
+                                _currentLine = LineData(
+                                  id: DateTime.now().millisecondsSinceEpoch
+                                      .toString(),
+                                  start: _corePoint!,
+                                  end: details.localPosition,
+                                  color: _getNextColor(),
+                                );
+                              });
+                            }
+                          },
+                          onPanUpdate: (details) {
+                            if (_currentLine != null) {
+                              setState(() {
+                                _currentLine!.end = details.localPosition;
+                              });
+                            }
+                          },
+                          onPanEnd: (details) {
+                            if (_currentLine != null) {
+                              final finishedLine = _currentLine!;
+                              setState(() {
+                                _lines.add(finishedLine);
+                                _currentLine = null;
+                              });
+                              _calculateRidgeCount(finishedLine);
+                            }
+                          },
+                          child: CustomPaint(
+                            size: Size.infinite,
+                            painter: FingerprintPainter(
+                              image: (_showProcessed && _processedImage != null)
+                                  ? _processedImage!
+                                  : _originalImage!,
+                              corePoint: _corePoint,
+                              lines: _lines,
+                              currentLine: _currentLine,
+                              destRect: _imageDestRect!,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 20, left: 24, right: 24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(30),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Detailed Analysis',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                      ),
+                      if (_lines.isNotEmpty)
+                        IconButton(
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.redAccent,
+                          ),
+                          onPressed: _clearLines,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: _lines.isEmpty
+                        ? Center(
+                            child: Text(
+                              _corePoint == null
+                                  ? 'Tap anywhere to set the Core Point'
+                                  : 'Drag from the core to count ridges',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.5),
+                              ),
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: _lines.length,
+                            padding: const EdgeInsets.only(bottom: 20),
+                            itemBuilder: (context, index) {
+                              final line = _lines[index];
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.05),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: ListTile(
+                                  leading: Container(
+                                    width: 4,
+                                    height: 30,
+                                    decoration: BoxDecoration(
+                                      color: line.color,
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                  ),
+                                  title: Text(
+                                    'Line #${index + 1}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  trailing: AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 300),
+                                    child: line.ridgeCount != null
+                                        ? Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: line.color.withOpacity(
+                                                0.2,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                              border: Border.all(
+                                                color: line.color.withOpacity(
+                                                  0.5,
+                                                ),
+                                              ),
+                                            ),
+                                            child: Text(
+                                              '${line.ridgeCount} Ridges',
+                                              style: TextStyle(
+                                                color: line.color,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          )
+                                        : const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: _originalImage != null
+          ? FloatingActionButton.extended(
+              onPressed: _pickImage,
+              icon: const Icon(Icons.photo_library),
+              label: const Text('Change Image'),
+              backgroundColor: Colors.blue,
+            )
+          : null,
+    );
+  }
+}
+
+class FingerprintPainter extends CustomPainter {
+  final ui.Image image;
+  final Offset? corePoint;
+  final List<LineData> lines;
+  final LineData? currentLine;
+  final Rect destRect;
+
+  FingerprintPainter({
+    required this.image,
+    this.corePoint,
+    required this.lines,
+    this.currentLine,
+    required this.destRect,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Draw Image
+    canvas.drawImageRect(
+      image,
+      Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+      destRect,
+      Paint()..filterQuality = ui.FilterQuality.high,
+    );
+
+    final paint = Paint()
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke;
+
+    // Draw existing lines
+    for (var line in lines) {
+      paint.color = line.color;
+      canvas.drawLine(line.start, line.end, paint);
+
+      // Draw endpoint
+      final endPaint = Paint()
+        ..color = line.color
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(line.end, 6, endPaint);
+      canvas.drawCircle(line.end, 8, paint..strokeWidth = 1.0);
+
+      // Draw label near endpoint
+      if (line.ridgeCount != null) {
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: '${line.ridgeCount}',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        );
+        textPainter.layout();
+
+        // Background for text
+        final textRect = Rect.fromLTWH(
+          line.end.dx + 12,
+          line.end.dy - 10,
+          textPainter.width + 8,
+          textPainter.height + 4,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(textRect, const Radius.circular(4)),
+          Paint()..color = Colors.black87,
+        );
+
+        textPainter.paint(canvas, Offset(line.end.dx + 16, line.end.dy - 8));
+      }
+    }
+
+    // Draw current line
+    if (currentLine != null) {
+      paint.color = currentLine!.color;
+      paint.strokeWidth = 2.0;
+      canvas.drawLine(currentLine!.start, currentLine!.end, paint);
+      canvas.drawCircle(currentLine!.end, 5, paint..style = PaintingStyle.fill);
+    }
+
+    // Draw Core Point
+    if (corePoint != null) {
+      // Outer glow
+      canvas.drawCircle(
+        corePoint!,
+        12,
+        Paint()
+          ..color = Colors.blue.withOpacity(0.3)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+      );
+
+      final corePaint = Paint()
+        ..color = Colors.blue
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(corePoint!, 8, corePaint);
+
+      final coreStrokePaint = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5;
+      canvas.drawCircle(corePoint!, 8, coreStrokePaint);
+
+      // Center dot
+      canvas.drawCircle(corePoint!, 2, Paint()..color = Colors.white);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant FingerprintPainter oldDelegate) {
+    return true;
+  }
+}

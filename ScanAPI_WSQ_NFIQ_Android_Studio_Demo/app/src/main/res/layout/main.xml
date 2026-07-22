@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:fitsSystemWindows="true"
+	android:orientation="vertical">
+
+	<TextView
+		android:id="@+id/tvScannerInfo"
+		android:layout_width="fill_parent"
+		android:layout_height="48dp"
+		android:layout_marginTop="16dp"
+		android:background="@drawable/tv_border"
+		android:text=" " />
+
+	<LinearLayout
+		android:id="@+id/linearLayout1"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content">
+
+		<CheckBox
+			android:id="@+id/cbFrame"
+			android:layout_width="wrap_content"
+			android:layout_height="48dp"
+			android:layout_marginLeft="5dp"
+			android:checked="true"
+			android:text="Frame" />
+
+		<CheckBox
+			android:id="@+id/cbLFD"
+			android:layout_width="wrap_content"
+			android:layout_height="48dp"
+			android:layout_marginLeft="5dp"
+			android:text="LFD" />
+
+		<CheckBox
+			android:id="@+id/cbInvertImage"
+			android:layout_width="wrap_content"
+			android:layout_height="48dp"
+			android:layout_marginLeft="5dp"
+			android:text="Invert" />
+
+		<CheckBox
+			android:id="@+id/cbNFIQ"
+			android:layout_width="wrap_content"
+			android:layout_height="48dp"
+			android:layout_marginLeft="5dp"
+			android:text="Nfiq" />
+	</LinearLayout>
+
+	<LinearLayout
+		android:id="@+id/linearLayout2"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content">
+
+		<Button
+			android:id="@+id/btnScan"
+			android:layout_width="100dp"
+			android:layout_height="48dp"
+			android:layout_marginLeft="5dp"
+			android:text=" Scan " />
+
+		<Button
+			android:id="@+id/btnStop"
+			android:layout_width="100dp"
+			android:layout_height="48dp"
+			android:layout_marginLeft="5dp"
+			android:enabled="false"
+			android:text=" Stop " />
+
+		<Button
+			android:id="@+id/btnSave"
+			android:layout_width="100dp"
+			android:layout_height="48dp"
+			android:layout_marginLeft="5dp"
+			android:enabled="false"
+			android:text=" Save " />
+	</LinearLayout>
+
+	<TextView
+		android:id="@+id/tvMessage"
+		android:layout_width="match_parent"
+		android:layout_height="48dp"
+		android:background="@drawable/tv_border"
+		android:text=" " />
+
+	<RelativeLayout
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:orientation="vertical">
+
+		<ImageView
+			android:id="@+id/imageFinger"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:contentDescription="Finger Image"
+			android:src="@drawable/logo" />
+
+		<CheckBox
+			android:id="@+id/cbUsbHostMode"
+			android:layout_width="wrap_content"
+			android:layout_height="48dp"
+			android:layout_alignParentBottom="true"
+			android:checked="true"
+			android:text="USB Host Mode" />
+	</RelativeLayout>
+</LinearLayout>
