@@ -8,8 +8,10 @@ import '../controllers/home_controller.dart';
 class HomeBinding extends Bindings {
   @override
   void dependencies() {
-    // Services / Providers
-    Get.lazyPut<ApiService>(() => ApiService());
+    // Reuse shared ApiService from app startup when available.
+    if (!Get.isRegistered<ApiService>()) {
+      Get.put<ApiService>(ApiService(), permanent: true);
+    }
     Get.lazyPut<NativeService>(() => NativeService());
 
     // Repository

@@ -16,6 +16,8 @@ class ThemeController extends GetxController {
 
   void changeScheme(FlexScheme scheme) {
     selectedScheme.value = scheme;
+    final isDark = Get.isDarkMode;
+    Get.changeTheme(getTheme(isDark));
   }
 
   ThemeData getTheme(bool isDark) {

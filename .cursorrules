@@ -1,5 +1,7 @@
 # Project Rules - Fingerprint Scan App
 
+Before any task, read and follow `.agents/rules/rules.md` (re-read it on every user prompt; do not rely only on memory).
+
 You must read and adhere to these project rules when executing tasks or making changes in this repository.
 
 ## 1. Project Folder Structure (GetX Clean Architecture)

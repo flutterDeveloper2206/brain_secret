@@ -4,7 +4,12 @@ import 'package:get/get.dart';
 import '../theme/theme_controller.dart';
 
 class ThemeSelectorFab extends StatelessWidget {
-  const ThemeSelectorFab({super.key});
+  const ThemeSelectorFab({
+    super.key,
+    this.heroTag = 'theme_selector_fab',
+  });
+
+  final Object? heroTag;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +28,7 @@ class ThemeSelectorFab extends StatelessWidget {
     ];
 
     return FloatingActionButton(
-      heroTag: 'theme_selector_fab_${UniqueKey()}',
+      heroTag: heroTag,
       onPressed: () {
         Get.bottomSheet(
           Container(
@@ -100,8 +105,9 @@ class ThemeSelectorFab extends StatelessWidget {
           ),
         );
       },
-      backgroundColor: theme.colorScheme.primary,
-      child: const Icon(Icons.palette, color: Colors.white),
+      backgroundColor: theme.colorScheme.secondary,
+      foregroundColor: theme.colorScheme.onSecondary,
+      child: Icon(Icons.palette, color: theme.colorScheme.onSecondary),
     );
   }
 

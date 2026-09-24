@@ -1,0 +1,12 @@
+---
+description: Always re-read and follow .agents/rules/rules.md on every prompt
+alwaysApply: true
+---
+
+# Mandatory project rules
+
+Before starting any task in this repository, you MUST:
+
+1. Read `.agents/rules/rules.md` using the Read tool
+2. Follow those rules for architecture, theming, responsive UI, hardware, and Dart conventions
+3. Do not rely only on memory from earlier turns — re-read the file at the start of each user request

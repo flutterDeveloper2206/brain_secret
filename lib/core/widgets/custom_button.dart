@@ -23,40 +23,56 @@ class CustomButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final btnBgColor = backgroundColor ?? theme.primaryColor;
-    final btnTxtColor = textColor ?? Colors.white;
+    final btnBgColor = backgroundColor ?? theme.colorScheme.primary;
+    final btnTxtColor = textColor ?? theme.colorScheme.onPrimary;
+    final expands = width == null || width == double.infinity;
 
     return SizedBox(
-      width: width,
+      width: width ?? double.infinity,
+      height: 48,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: btnBgColor,
           foregroundColor: btnTxtColor,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          disabledBackgroundColor: btnBgColor.withValues(alpha: 0.55),
+          disabledForegroundColor: btnTxtColor.withValues(alpha: 0.9),
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          minimumSize: Size(expands ? double.infinity : 0, 48),
+          maximumSize: const Size(double.infinity, 48),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
         onPressed: isLoading ? null : onPressed,
         child: isLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
+            ? SizedBox(
+                width: 22,
+                height: 22,
                 child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  strokeWidth: 2.4,
+                  valueColor: AlwaysStoppedAnimation<Color>(btnTxtColor),
                 ),
               )
             : Row(
-                mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.max,
                 children: [
                   if (icon != null) ...[
-                    Icon(icon, size: 18),
+                    Icon(icon, size: 18, color: btnTxtColor),
                     const SizedBox(width: 8),
                   ],
-                  Text(
-                    text,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
+                  Flexible(
+                    child: Text(
+                      text,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: btnTxtColor,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
                     ),
                   ),
                 ],

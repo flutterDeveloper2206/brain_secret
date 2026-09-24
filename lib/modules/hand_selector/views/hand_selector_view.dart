@@ -242,12 +242,12 @@ class HandSelectorView extends GetView<HandSelectorController> {
         rx = 0.47; ry = 0.11; break;
       case 'L2': // Index
         rx = 0.69; ry = 0.17; break;
-      case 'L1': // Thumb
-        rx = 0.86; ry = 0.48; break;
+      case 'L1': // Thumb (lower, side — not aligned with finger tips)
+        rx = 0.84; ry = 0.56; break;
 
       // Right Hand Codes (Mirrored horizontally)
       case 'R1': // Thumb
-        rx = 0.14; ry = 0.48; break;
+        rx = 0.16; ry = 0.56; break;
       case 'R2': // Index
         rx = 0.31; ry = 0.17; break;
       case 'R3': // Middle
@@ -330,13 +330,15 @@ class HolographicHandPainter extends CustomPainter {
     final f4 = Offset(w * flex(0.28), h * 0.16); // Ring Tip
     final f3 = Offset(w * flex(0.47), h * 0.11); // Middle Tip
     final f2 = Offset(w * flex(0.69), h * 0.17); // Index Tip
-    final f1 = Offset(w * flex(0.86), h * 0.48); // Thumb Tip
+    final f1 = Offset(w * flex(0.84), h * 0.56); // Thumb tip
+    final thumbWeb = Offset(w * flex(0.66), h * 0.51); // Index–thumb web
+    final thumbMcp = Offset(w * flex(0.78), h * 0.58); // Thumb knuckle (MCP)
 
     final k5 = Offset(w * flex(0.25), h * 0.52); // Pinky Knuckle
     final k4 = Offset(w * flex(0.36), h * 0.46); // Ring Knuckle
     final k3 = Offset(w * flex(0.48), h * 0.43); // Middle Knuckle
     final k2 = Offset(w * flex(0.60), h * 0.45); // Index Knuckle
-    final k1 = Offset(w * flex(0.72), h * 0.62); // Thumb Base
+    final k1 = Offset(w * flex(0.68), h * 0.74); // Thumb CMC / thenar base
 
     final wristL = Offset(w * flex(0.35), h * 0.90); // Left Wrist Base
     final wristR = Offset(w * flex(0.65), h * 0.90); // Right Wrist Base
@@ -347,19 +349,20 @@ class HolographicHandPainter extends CustomPainter {
     canvas.drawLine(f4, k4, meshPaint);
     canvas.drawLine(f3, k3, meshPaint);
     canvas.drawLine(f2, k2, meshPaint);
-    canvas.drawLine(f1, k1, meshPaint);
+    canvas.drawLine(f1, thumbMcp, meshPaint);
+    canvas.drawLine(thumbMcp, k1, meshPaint);
 
     // Knuckle lines
     canvas.drawLine(k5, k4, meshPaint);
     canvas.drawLine(k4, k3, meshPaint);
     canvas.drawLine(k3, k2, meshPaint);
-    canvas.drawLine(k2, k1, meshPaint);
+    canvas.drawLine(k2, thumbWeb, meshPaint);
 
     // Diagonal Wireframe Webbing
     canvas.drawLine(f5, k4, meshPaint);
     canvas.drawLine(f4, k3, meshPaint);
     canvas.drawLine(f3, k2, meshPaint);
-    canvas.drawLine(f2, k1, meshPaint);
+    canvas.drawLine(f2, thumbWeb, meshPaint);
     canvas.drawLine(k5, palmCenter, meshPaint);
     canvas.drawLine(k4, palmCenter, meshPaint);
     canvas.drawLine(k3, palmCenter, meshPaint);
@@ -399,16 +402,35 @@ class HolographicHandPainter extends CustomPainter {
     path.quadraticBezierTo(f2.dx, f2.dy - 10, w * flex(0.74), h * 0.24);
     path.lineTo(w * flex(0.70), h * 0.49);
 
-    // Webbing to Thumb
-    path.quadraticBezierTo(w * flex(0.72), h * 0.56, w * flex(0.78), h * 0.54);
+    // Index–thumb web (dip between index and thumb)
+    path.quadraticBezierTo(
+      w * flex(0.68),
+      h * 0.50,
+      thumbWeb.dx,
+      thumbWeb.dy,
+    );
 
-    // Thumb Finger Outlines
-    path.lineTo(w * flex(0.92), h * 0.45);
-    path.quadraticBezierTo(f1.dx + 5, f1.dy - 5, w * flex(0.83), h * 0.58);
-    path.lineTo(w * flex(0.72), h * 0.72);
+    // Opposable thumb: outer pad arc → tip → inner edge → thenar mound
+    path.cubicTo(
+      w * flex(0.80),
+      h * 0.48,
+      w * flex(0.90),
+      h * 0.50,
+      f1.dx,
+      f1.dy,
+    );
+    path.cubicTo(
+      w * flex(0.88),
+      h * 0.64,
+      w * flex(0.76),
+      h * 0.70,
+      thumbMcp.dx,
+      thumbMcp.dy,
+    );
+    path.quadraticBezierTo(k1.dx, k1.dy, w * flex(0.70), h * 0.82);
 
-    // Thumb Base to Right Wrist
-    path.quadraticBezierTo(w * flex(0.75), h * 0.82, wristR.dx, wristR.dy);
+    // Thenar to right wrist
+    path.quadraticBezierTo(w * flex(0.68), h * 0.86, wristR.dx, wristR.dy);
 
     // Wrist Base Line
     path.lineTo(wristL.dx, wristL.dy);
