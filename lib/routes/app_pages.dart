@@ -33,6 +33,14 @@ import '../modules/user_profile/bindings/user_profile_binding.dart';
 import '../modules/user_profile/views/user_profile_view.dart';
 import '../modules/settings/bindings/settings_binding.dart';
 import '../modules/settings/views/settings_view.dart';
+import '../modules/permission_master/bindings/permission_master_binding.dart';
+import '../modules/permission_master/views/permission_master_view.dart';
+import '../modules/permission_action_mapping/bindings/permission_action_mapping_binding.dart';
+import '../modules/permission_action_mapping/views/permission_action_mapping_view.dart';
+import '../modules/role_master/bindings/role_master_binding.dart';
+import '../modules/role_master/views/role_master_view.dart';
+import '../modules/role_permission_mapping/bindings/role_permission_mapping_binding.dart';
+import '../modules/role_permission_mapping/views/role_permission_mapping_view.dart';
 import 'app_routes.dart';
 
 class AppPages {
@@ -103,6 +111,26 @@ class AppPages {
       name: Routes.settings,
       page: () => const SettingsView(),
       binding: SettingsBinding(),
+    ),
+    GetPage(
+      name: Routes.permissions,
+      page: () => const PermissionMasterView(),
+      binding: PermissionMasterBinding(),
+    ),
+    GetPage(
+      name: Routes.permissionActionMapping,
+      page: () => const PermissionActionMappingView(),
+      binding: PermissionActionMappingBinding(),
+    ),
+    GetPage(
+      name: Routes.roles,
+      page: () => const RoleMasterView(),
+      binding: RoleMasterBinding(),
+    ),
+    GetPage(
+      name: Routes.rolePermissionMapping,
+      page: () => const RolePermissionMappingView(),
+      binding: RolePermissionMappingBinding(),
     ),
     GetPage(
       name: Routes.home,

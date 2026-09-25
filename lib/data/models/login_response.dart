@@ -9,16 +9,34 @@ class LoginResponse {
   final String message;
   final LoginData? data;
 
-  bool get isSuccess => statusCode == 200 && data != null;
+  bool get isSuccess =>
+      (statusCode == 200 || statusCode == 201) &&
+      data != null &&
+      data!.token.isNotEmpty;
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
-    final rawData = json['data'];
+    final rawData = json['data'] ?? json['Data'];
+    LoginData? data;
+    if (rawData is Map) {
+      data = LoginData.fromJson(Map<String, dynamic>.from(rawData));
+    }
+
+    final statusRaw = json['statusCode'] ?? json['StatusCode'] ?? json['status_code'];
+    int statusCode = 0;
+    if (statusRaw is int) {
+      statusCode = statusRaw;
+    } else if (statusRaw is num) {
+      statusCode = statusRaw.toInt();
+    } else {
+      statusCode = int.tryParse(statusRaw?.toString() ?? '') ?? 0;
+    }
+
     return LoginResponse(
-      statusCode: json['statusCode'] as int? ?? 0,
-      message: json['message'] as String? ?? 'Unknown response',
-      data: rawData is Map<String, dynamic>
-          ? LoginData.fromJson(rawData)
-          : null,
+      statusCode: statusCode,
+      message: json['message']?.toString() ??
+          json['Message']?.toString() ??
+          'Unknown response',
+      data: data,
     );
   }
 }
@@ -36,9 +54,19 @@ class LoginData {
 
   factory LoginData.fromJson(Map<String, dynamic> json) {
     return LoginData(
-      token: json['token'] as String? ?? '',
-      expiresAt: json['expiresAt'] as String? ?? '',
-      userType: json['userType'] as String? ?? '',
+      token: json['token']?.toString() ??
+          json['Token']?.toString() ??
+          json['access_token']?.toString() ??
+          json['accessToken']?.toString() ??
+          '',
+      expiresAt: json['expiresAt']?.toString() ??
+          json['ExpiresAt']?.toString() ??
+          json['expires_at']?.toString() ??
+          '',
+      userType: json['userType']?.toString() ??
+          json['UserType']?.toString() ??
+          json['user_type']?.toString() ??
+          '',
     );
   }
 }

@@ -12,6 +12,10 @@ abstract class Routes {
   static const staffDetails = '/staffDetails';
   static const userProfile = '/user-profile';
   static const settings = '/settings';
+  static const permissions = '/permissions';
+  static const permissionActionMapping = '/permissionActionMapping';
+  static const roles = '/roleMaster';
+  static const rolePermissionMapping = '/rolePermissionMapping';
   static const home = '/home';
   static const analysis = '/analysis';
   static const deviceScan = '/deviceScan';
