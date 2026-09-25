@@ -5,6 +5,31 @@ class AppConstants {
   static const String loginEndpoint = 'auth/mobile/login';
   static const String logoutEndpoint = 'auth/mobile/logout';
   static const String permissionsEndpoint = 'rightsmaster/get/user/permissions';
+  static const String permissionCreateEndpoint =
+      'rightsmaster/permission/create';
+  static const String permissionUpdateEndpoint =
+      'rightsmaster/permission/update';
+  static const String permissionListEndpoint = 'rightsmaster/permission/list';
+  static const String permissionGetEndpoint = 'rightsmaster/permission';
+  static const String permissionDropdownEndpoint =
+      'rightsmaster/permission/dropdown';
+  static const String permissionActionCreateEndpoint =
+      'rightsmaster/permission/action/create';
+  static const String permissionActionsOfCodeEndpoint =
+      'rightsmaster/permission/actions/of/permission/code';
+  /// Full action tree for a permission (used right after create).
+  /// GET rightsmaster/get/action/tree/for/{permissionId}
+  static const String permissionActionTreeForEndpoint =
+      'rightsmaster/get/action/tree/for';
+  static const String roleCreateEndpoint = 'rightsmaster/role/create';
+  static const String roleUpdateEndpoint = 'rightsmaster/role/update';
+  static const String roleListEndpoint = 'rightsmaster/role/list';
+  static const String roleGetEndpoint = 'rightsmaster/role';
+  static const String rolePermissionCreateEndpoint =
+      'rightsmaster/role/permission/create';
+  static const String rolePermissionsEndpoint = 'rightsmaster/role/permissions';
+  static const String permissionsOfRoleCodeEndpoint =
+      'rightsmaster/permission/of/role/code';
   static const String createCustomerEndpoint = 'master/create-customer';
   static const String updateCustomerEndpoint = 'master/update-customer';
   static const String deleteCustomerEndpoint = 'master/soft-delete-customer';

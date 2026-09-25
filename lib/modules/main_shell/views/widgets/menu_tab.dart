@@ -5,6 +5,8 @@ import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/gradient_background.dart';
 import '../../../../data/providers/permission_service.dart';
 import '../../../../routes/app_routes.dart';
+import '../../../role_master/bindings/role_master_binding.dart';
+import '../../../role_master/views/role_master_view.dart';
 import '../../controllers/main_shell_controller.dart';
 
 class MenuTab extends GetView<MainShellController> {
@@ -177,6 +179,60 @@ class MenuTab extends GetView<MainShellController> {
                               ),
                             ),
                             onTap: () => Get.toNamed(Routes.staffs),
+                          ),
+                        ),
+                        GlassContainer(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          borderRadius: 18,
+                          child: ListTile(
+                            leading: Icon(
+                              Icons.admin_panel_settings_outlined,
+                              color: theme.colorScheme.primary,
+                            ),
+                            title: Text(
+                              'Permission Master',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            trailing: Icon(
+                              Icons.chevron_right,
+                              color: theme.colorScheme.primary.withValues(
+                                alpha: 0.7,
+                              ),
+                            ),
+                            onTap: () => Get.toNamed(Routes.permissions),
+                          ),
+                        ),
+                        GlassContainer(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          borderRadius: 18,
+                          child: ListTile(
+                            leading: Icon(
+                              Icons.groups_2_outlined,
+                              color: theme.colorScheme.primary,
+                            ),
+                            title: Text(
+                              'Role Master',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            trailing: Icon(
+                              Icons.chevron_right,
+                              color: theme.colorScheme.primary.withValues(
+                                alpha: 0.7,
+                              ),
+                            ),
+                            onTap: () {
+                              Get.to(
+                                () => const RoleMasterView(),
+                                binding: RoleMasterBinding(),
+                                transition: Transition.cupertino,
+                              );
+                            },
                           ),
                         ),
                         const SizedBox(height: 4),

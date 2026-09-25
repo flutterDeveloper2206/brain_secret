@@ -16,13 +16,27 @@ class PermissionsResponse {
   bool get isSuccess => statusCode == 200;
 
   factory PermissionsResponse.fromJson(Map<String, dynamic> json) {
-    final data = json['data'];
+    final data = json['data'] ?? json['Data'];
     final dataMap = data is Map ? Map<String, dynamic>.from(data) : null;
-    final sideBarRaw = dataMap?['sideBar'];
+    final sideBarRaw =
+        dataMap?['sideBar'] ?? dataMap?['SideBar'] ?? dataMap?['sidebar'];
+
+    final statusRaw =
+        json['statusCode'] ?? json['StatusCode'] ?? json['status_code'];
+    int statusCode = 0;
+    if (statusRaw is int) {
+      statusCode = statusRaw;
+    } else if (statusRaw is num) {
+      statusCode = statusRaw.toInt();
+    } else {
+      statusCode = int.tryParse(statusRaw?.toString() ?? '') ?? 0;
+    }
 
     return PermissionsResponse(
-      statusCode: json['statusCode'] as int? ?? 0,
-      message: json['message'] as String? ?? 'Unknown response',
+      statusCode: statusCode,
+      message: json['message']?.toString() ??
+          json['Message']?.toString() ??
+          'Unknown response',
       sideBar: sideBarRaw is List
           ? sideBarRaw
                 .whereType<Map>()

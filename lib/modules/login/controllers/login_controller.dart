@@ -65,12 +65,23 @@ class LoginController extends GetxController {
       await permissionService.saveSession(session);
       apiService.setAuthToken(data.token);
 
-      final permissions = await permissionsRepository.fetchUserPermissions();
-      await permissionService.applyPermissions(permissions);
+      try {
+        final permissions = await permissionsRepository.fetchUserPermissions();
+        await permissionService.applyPermissions(permissions);
+      } catch (e) {
+        // Auth succeeded — don't block home if permissions endpoint fails.
+        if (kDebugMode) {
+          debugPrint('Permissions load failed after login: $e');
+        }
+        GlassSnackbar.warning(
+          'Signed in, but permissions could not be loaded.',
+          title: 'Partial login',
+        );
+      }
 
       Get.offAllNamed(Routes.home);
       GlassSnackbar.success(
-        response.message,
+        response.message.isEmpty ? 'Signed in successfully.' : response.message,
         title: 'Welcome',
       );
     } catch (e) {
