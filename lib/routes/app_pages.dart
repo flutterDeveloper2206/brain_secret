@@ -29,6 +29,10 @@ import '../modules/staffs/bindings/staffs_binding.dart';
 import '../modules/staffs/views/staffs_view.dart';
 import '../modules/staff_details/bindings/staff_details_binding.dart';
 import '../modules/staff_details/views/staff_details_view.dart';
+import '../modules/user_profile/bindings/user_profile_binding.dart';
+import '../modules/user_profile/views/user_profile_view.dart';
+import '../modules/settings/bindings/settings_binding.dart';
+import '../modules/settings/views/settings_view.dart';
 import 'app_routes.dart';
 
 class AppPages {
@@ -89,6 +93,16 @@ class AppPages {
       name: Routes.staffDetails,
       page: () => const StaffDetailsView(),
       binding: StaffDetailsBinding(),
+    ),
+    GetPage(
+      name: Routes.userProfile,
+      page: () => const UserProfileView(),
+      binding: UserProfileBinding(),
+    ),
+    GetPage(
+      name: Routes.settings,
+      page: () => const SettingsView(),
+      binding: SettingsBinding(),
     ),
     GetPage(
       name: Routes.home,

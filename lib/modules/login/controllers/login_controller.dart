@@ -10,18 +10,21 @@ import '../../../data/providers/api_service.dart';
 import '../../../data/providers/permission_service.dart';
 import '../../../data/repositories/auth_repo.dart';
 import '../../../data/repositories/permissions_repo.dart';
+import '../../../data/repositories/user_repo.dart';
 import '../../../routes/app_routes.dart';
 
 class LoginController extends GetxController {
   LoginController({
     required this.authRepository,
     required this.permissionsRepository,
+    required this.userRepository,
     required this.permissionService,
     required this.apiService,
   });
 
   final AuthRepository authRepository;
   final PermissionsRepository permissionsRepository;
+  final UserRepository userRepository;
   final PermissionService permissionService;
   final ApiService apiService;
 
@@ -67,6 +70,14 @@ class LoginController extends GetxController {
 
       final permissions = await permissionsRepository.fetchUserPermissions();
       await permissionService.applyPermissions(permissions);
+
+      try {
+        final userResponse = await userRepository.getCurrentUser();
+        permissionService.setUserProfile(userResponse.user);
+      } catch (_) {
+        // Profile fetch is non-blocking; dashboard/menu can still load.
+        permissionService.clearUserProfile();
+      }
 
       Get.offAllNamed(Routes.home);
       GlassSnackbar.success(

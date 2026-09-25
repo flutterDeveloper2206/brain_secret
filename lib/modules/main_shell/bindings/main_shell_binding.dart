@@ -21,13 +21,18 @@ class MainShellBinding extends Bindings {
         permanent: true,
       );
     }
-    Get.lazyPut<NativeService>(() => NativeService());
-    Get.lazyPut<FingerprintRepository>(
-      () => FingerprintRepositoryImpl(
-        nativeService: Get.find<NativeService>(),
-        apiService: Get.find<ApiService>(),
-      ),
-    );
+    if (!Get.isRegistered<NativeService>()) {
+      Get.put<NativeService>(NativeService(), permanent: true);
+    }
+    if (!Get.isRegistered<FingerprintRepository>()) {
+      Get.put<FingerprintRepository>(
+        FingerprintRepositoryImpl(
+          nativeService: Get.find<NativeService>(),
+          apiService: Get.find<ApiService>(),
+        ),
+        permanent: true,
+      );
+    }
     Get.lazyPut<HomeController>(
       () => HomeController(
         repository: Get.find<FingerprintRepository>(),

@@ -347,15 +347,15 @@ class _StatusSection extends GetView<FranchiseProfileController> {
       title: 'Status',
       icon: Icons.toggle_on_outlined,
       child: Obx(
-        () => Container(
-          constraints: const BoxConstraints(minHeight: 72),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface.withValues(alpha: 0.42),
+        () => Material(
+          color: theme.colorScheme.surface.withValues(alpha: 0.42),
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(
+            side: BorderSide(
               color: theme.colorScheme.outline.withValues(alpha: 0.22),
             ),
           ),
+          clipBehavior: Clip.antiAlias,
           child: SwitchListTile.adaptive(
             value: controller.isActive.value,
             onChanged: (value) => controller.isActive.value = value,

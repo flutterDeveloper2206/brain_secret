@@ -4,10 +4,125 @@ import '../../../core/errors/error_handler.dart';
 import '../../../core/widgets/glass_snackbar.dart';
 import '../../../data/models/customer.dart';
 import '../../../data/models/customer_request.dart';
+import '../../../data/models/family_member.dart';
 import '../../../data/models/franchise_dropdown.dart';
 import '../../../data/repositories/customer_repo.dart';
 import '../../../data/repositories/franchise_repo.dart';
 import '../../../routes/app_routes.dart';
+
+class FamilyMemberFormItem {
+  FamilyMemberFormItem({
+    String fullName = '',
+    String email = '',
+    String education = '',
+    String age = '',
+    String emergencyContact = '',
+    DateTime? dob,
+  }) : fullNameController = TextEditingController(text: fullName),
+       emailController = TextEditingController(text: email),
+       educationController = TextEditingController(text: education),
+       ageController = TextEditingController(text: age),
+       emergencyContactController = TextEditingController(
+         text: emergencyContact,
+       ),
+       dateOfBirthController = TextEditingController(),
+       dateOfBirth = Rxn<DateTime>(dob) {
+    if (dob != null) {
+      dateOfBirthController.text = _formatDisplayDob(dob);
+    }
+  }
+
+  final TextEditingController fullNameController;
+  final TextEditingController emailController;
+  final TextEditingController educationController;
+  final TextEditingController ageController;
+  final TextEditingController emergencyContactController;
+  final TextEditingController dateOfBirthController;
+  final Rxn<DateTime> dateOfBirth;
+
+  factory FamilyMemberFormItem.fromMember(FamilyMember member) {
+    final item = FamilyMemberFormItem(
+      fullName: member.customerFullName,
+      email: member.emailId,
+      education: member.education,
+      age: member.age > 0 ? '${member.age}' : '',
+      emergencyContact: member.emergencyContact,
+    );
+    item.applyDobString(member.dob);
+    return item;
+  }
+
+  void setDateOfBirth(DateTime dob) {
+    dateOfBirth.value = dob;
+    dateOfBirthController.text = _formatDisplayDob(dob);
+    ageController.text = _calculateAge(dob).toString();
+  }
+
+  void applyDobString(String raw) {
+    final value = raw.trim();
+    if (value.isEmpty) {
+      dateOfBirth.value = null;
+      dateOfBirthController.clear();
+      return;
+    }
+    DateTime? parsed = DateTime.tryParse(value);
+    if (parsed == null && value.contains('/')) {
+      final parts = value.split('/');
+      if (parts.length == 3) {
+        parsed = DateTime.tryParse(
+          '${parts[2]}-${parts[1].padLeft(2, '0')}-${parts[0].padLeft(2, '0')}',
+        );
+      }
+    }
+    if (parsed != null) {
+      setDateOfBirth(parsed);
+    }
+  }
+
+  String get apiDob {
+    final dob = dateOfBirth.value;
+    if (dob == null) return '';
+    return '${dob.year}-'
+        '${dob.month.toString().padLeft(2, '0')}-'
+        '${dob.day.toString().padLeft(2, '0')}';
+  }
+
+  FamilyMember toFamilyMember() {
+    return FamilyMember(
+      customerFullName: fullNameController.text.trim(),
+      emailId: emailController.text.trim(),
+      education: educationController.text.trim(),
+      age: int.tryParse(ageController.text.trim()) ?? 0,
+      emergencyContact: emergencyContactController.text.trim(),
+      dob: apiDob,
+    );
+  }
+
+  void dispose() {
+    fullNameController.dispose();
+    emailController.dispose();
+    educationController.dispose();
+    ageController.dispose();
+    emergencyContactController.dispose();
+    dateOfBirthController.dispose();
+  }
+
+  static String _formatDisplayDob(DateTime dob) {
+    return '${dob.day.toString().padLeft(2, '0')}/'
+        '${dob.month.toString().padLeft(2, '0')}/'
+        '${dob.year}';
+  }
+
+  static int _calculateAge(DateTime dob) {
+    final now = DateTime.now();
+    var age = now.year - dob.year;
+    if (now.month < dob.month ||
+        (now.month == dob.month && now.day < dob.day)) {
+      age--;
+    }
+    return age < 0 ? 0 : age;
+  }
+}
 
 class CustomerProfileController extends GetxController {
   CustomerProfileController({
@@ -56,6 +171,8 @@ class CustomerProfileController extends GetxController {
   final RxList<FranchiseDropdownItem> franchiseOptions =
       <FranchiseDropdownItem>[].obs;
   final RxnInt selectedFranchiseCode = RxnInt();
+  final RxList<FamilyMemberFormItem> familyMembers =
+      <FamilyMemberFormItem>[].obs;
 
   /// Locked id for update — never rely only on the text field.
   int editingCustomerId = 0;
@@ -119,6 +236,49 @@ class CustomerProfileController extends GetxController {
     }
     selectedFranchiseCode.value = code;
     franchiseCodeController.text = '$code';
+  }
+
+  void addFamilyMember() {
+    familyMembers.add(FamilyMemberFormItem());
+  }
+
+  void removeFamilyMember(int index) {
+    if (index < 0 || index >= familyMembers.length) return;
+    final item = familyMembers.removeAt(index);
+    item.dispose();
+  }
+
+  void _clearFamilyMembers() {
+    for (final item in familyMembers) {
+      item.dispose();
+    }
+    familyMembers.clear();
+  }
+
+  void _setFamilyMembers(List<FamilyMember> members) {
+    _clearFamilyMembers();
+    for (final member in members) {
+      familyMembers.add(FamilyMemberFormItem.fromMember(member));
+    }
+  }
+
+  Future<void> pickFamilyMemberDob(BuildContext context, int index) async {
+    if (index < 0 || index >= familyMembers.length) return;
+    try {
+      final item = familyMembers[index];
+      final now = DateTime.now();
+      final picked = await showDatePicker(
+        context: context,
+        initialDate: item.dateOfBirth.value ?? DateTime(now.year - 12),
+        firstDate: DateTime(1920),
+        lastDate: now,
+      );
+      if (picked == null) return;
+      item.setDateOfBirth(picked);
+      familyMembers.refresh();
+    } catch (e) {
+      ErrorHandler.handleError(e);
+    }
   }
 
   void _bootstrapFromArgs() {
@@ -225,6 +385,7 @@ class CustomerProfileController extends GetxController {
     } else {
       selectedFranchiseCode.value = null;
     }
+    _setFamilyMembers(customer.familyMembers);
     _syncMobileVerified();
   }
 
@@ -284,6 +445,24 @@ class CustomerProfileController extends GetxController {
       isRightHandDominant.value = true;
       companyCodeController.text = '1';
       franchiseCodeController.text = '1';
+      _setFamilyMembers([
+        const FamilyMember(
+          customerFullName: 'Prem',
+          emailId: 'prem@gmail.com',
+          education: '5th',
+          age: 12,
+          emergencyContact: '9876501236',
+          dob: '2015-01-20',
+        ),
+        const FamilyMember(
+          customerFullName: 'Pritam',
+          emailId: 'Pritam@gmail.com',
+          education: '5th',
+          age: 12,
+          emergencyContact: '9876501236',
+          dob: '2015-01-20',
+        ),
+      ]);
     } catch (e) {
       ErrorHandler.handleError(e);
     }
@@ -383,6 +562,7 @@ class CustomerProfileController extends GetxController {
       // Backend treats missing is_active as false and hides the row from list.
       isActive: true,
       isDelete: false,
+      familyMembers: familyMembers.map((e) => e.toFamilyMember()).toList(),
     );
   }
 
@@ -470,6 +650,7 @@ class CustomerProfileController extends GetxController {
     emergencyContactController.dispose();
     companyCodeController.dispose();
     franchiseCodeController.dispose();
+    _clearFamilyMembers();
     super.onClose();
   }
 }

@@ -4,6 +4,7 @@ class AppConstants {
   static const String apiBaseUrl = 'http://187.127.135.213:6090/api/';
   static const String loginEndpoint = 'auth/mobile/login';
   static const String logoutEndpoint = 'auth/mobile/logout';
+  static const String userProfileEndpoint = 'user/get/user';
   static const String permissionsEndpoint = 'rightsmaster/get/user/permissions';
   static const String createCustomerEndpoint = 'master/create-customer';
   static const String updateCustomerEndpoint = 'master/update-customer';

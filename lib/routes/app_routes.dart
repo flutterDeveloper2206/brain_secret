@@ -10,6 +10,8 @@ abstract class Routes {
   static const staffProfile = '/staffProfile';
   static const staffs = '/staffs';
   static const staffDetails = '/staffDetails';
+  static const userProfile = '/user-profile';
+  static const settings = '/settings';
   static const home = '/home';
   static const analysis = '/analysis';
   static const deviceScan = '/deviceScan';

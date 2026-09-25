@@ -314,60 +314,213 @@ class _FamilySection extends GetView<CustomerProfileController> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return FormSectionCard(
       title: 'Family',
       icon: Icons.family_restroom_outlined,
-      child: ResponsiveFormGrid(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AppTextField(
-            controller: controller.fatherNameController,
-            label: "Father's Name",
-            hint: "Father's name",
-            prefixIcon: Icons.person_outline,
-            textCapitalization: TextCapitalization.words,
-            validator: (v) => (v == null || v.trim().isEmpty)
-                ? "Father's name is required"
-                : null,
-          ),
-          AppTextField(
-            controller: controller.motherNameController,
-            label: "Mother's Name",
-            hint: "Mother's name",
-            prefixIcon: Icons.person_outline,
-            textCapitalization: TextCapitalization.words,
-            validator: (v) => (v == null || v.trim().isEmpty)
-                ? "Mother's name is required"
-                : null,
-          ),
-          AppTextField(
-            controller: controller.spouseNameController,
-            label: 'Spouse Name',
-            hint: 'Spouse name',
-            prefixIcon: Icons.people_outline,
-            textCapitalization: TextCapitalization.words,
-            validator: (v) => (v == null || v.trim().isEmpty)
-                ? 'Spouse name is required'
-                : null,
-          ),
-          AppTextField(
-            controller: controller.emergencyContactController,
-            label: 'Emergency Contact',
-            hint: 'Emergency contact number',
-            prefixIcon: Icons.contact_phone_outlined,
-            keyboardType: TextInputType.phone,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(10),
+          ResponsiveFormGrid(
+            children: [
+              AppTextField(
+                controller: controller.fatherNameController,
+                label: "Father's Name",
+                hint: "Father's name",
+                prefixIcon: Icons.person_outline,
+                textCapitalization: TextCapitalization.words,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? "Father's name is required"
+                    : null,
+              ),
+              AppTextField(
+                controller: controller.motherNameController,
+                label: "Mother's Name",
+                hint: "Mother's name",
+                prefixIcon: Icons.person_outline,
+                textCapitalization: TextCapitalization.words,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? "Mother's name is required"
+                    : null,
+              ),
+              AppTextField(
+                controller: controller.spouseNameController,
+                label: 'Spouse Name',
+                hint: 'Spouse name',
+                prefixIcon: Icons.people_outline,
+                textCapitalization: TextCapitalization.words,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Spouse name is required'
+                    : null,
+              ),
+              AppTextField(
+                controller: controller.emergencyContactController,
+                label: 'Emergency Contact',
+                hint: 'Emergency contact number',
+                prefixIcon: Icons.contact_phone_outlined,
+                keyboardType: TextInputType.phone,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(10),
+                ],
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) {
+                    return 'Emergency contact is required';
+                  }
+                  if (v.trim().length != 10) {
+                    return 'Enter a valid 10-digit number';
+                  }
+                  return null;
+                },
+              ),
             ],
-            validator: (v) {
-              if (v == null || v.trim().isEmpty) {
-                return 'Emergency contact is required';
-              }
-              if (v.trim().length != 10) {
-                return 'Enter a valid 10-digit number';
-              }
-              return null;
-            },
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Family members',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: controller.addFamilyMember,
+                icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+                label: const Text('Add family member'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Obx(() {
+            final members = controller.familyMembers;
+            if (members.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  'No family members added yet.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.textTheme.bodyMedium?.color?.withValues(
+                      alpha: 0.6,
+                    ),
+                  ),
+                ),
+              );
+            }
+            return Column(
+              children: [
+                for (var i = 0; i < members.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 12),
+                  _FamilyMemberCard(index: i, item: members[i]),
+                ],
+              ],
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+class _FamilyMemberCard extends GetView<CustomerProfileController> {
+  const _FamilyMemberCard({required this.index, required this.item});
+
+  final int index;
+  final FamilyMemberFormItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.25),
+        ),
+        color: theme.colorScheme.surface.withValues(alpha: 0.35),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Member ${index + 1}',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Remove',
+                onPressed: () => controller.removeFamilyMember(index),
+                icon: Icon(
+                  Icons.delete_outline_rounded,
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ],
+          ),
+          ResponsiveFormGrid(
+            children: [
+              AppTextField(
+                controller: item.fullNameController,
+                label: 'Full Name',
+                hint: 'Family member name',
+                prefixIcon: Icons.badge_outlined,
+                textCapitalization: TextCapitalization.words,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Full name is required'
+                    : null,
+              ),
+              AppTextField(
+                controller: item.emailController,
+                label: 'Email',
+                hint: 'Email address',
+                prefixIcon: Icons.email_outlined,
+                keyboardType: TextInputType.emailAddress,
+              ),
+              AppTextField(
+                controller: item.educationController,
+                label: 'Education',
+                hint: 'Education',
+                prefixIcon: Icons.school_outlined,
+              ),
+              AppTextField(
+                controller: item.dateOfBirthController,
+                label: 'Date of Birth',
+                hint: 'Select date of birth',
+                prefixIcon: Icons.cake_outlined,
+                readOnly: true,
+                onTap: () => controller.pickFamilyMemberDob(context, index),
+              ),
+              AppTextField(
+                controller: item.ageController,
+                label: 'Age',
+                hint: 'Age',
+                prefixIcon: Icons.numbers_outlined,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(3),
+                ],
+              ),
+              AppTextField(
+                controller: item.emergencyContactController,
+                label: 'Emergency Contact',
+                hint: 'Contact number',
+                prefixIcon: Icons.contact_phone_outlined,
+                keyboardType: TextInputType.phone,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(10),
+                ],
+              ),
+            ],
           ),
         ],
       ),
@@ -546,15 +699,15 @@ class _ToggleField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      constraints: const BoxConstraints(minHeight: 72),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withValues(alpha: 0.42),
+    return Material(
+      color: theme.colorScheme.surface.withValues(alpha: 0.42),
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
+        side: BorderSide(
           color: theme.colorScheme.outline.withValues(alpha: 0.22),
         ),
       ),
+      clipBehavior: Clip.antiAlias,
       child: SwitchListTile.adaptive(
         value: value,
         onChanged: onChanged,

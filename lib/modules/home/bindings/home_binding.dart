@@ -12,15 +12,18 @@ class HomeBinding extends Bindings {
     if (!Get.isRegistered<ApiService>()) {
       Get.put<ApiService>(ApiService(), permanent: true);
     }
-    Get.lazyPut<NativeService>(() => NativeService());
-
-    // Repository
-    Get.lazyPut<FingerprintRepository>(
-      () => FingerprintRepositoryImpl(
-        nativeService: Get.find<NativeService>(),
-        apiService: Get.find<ApiService>(),
-      ),
-    );
+    if (!Get.isRegistered<NativeService>()) {
+      Get.put<NativeService>(NativeService(), permanent: true);
+    }
+    if (!Get.isRegistered<FingerprintRepository>()) {
+      Get.put<FingerprintRepository>(
+        FingerprintRepositoryImpl(
+          nativeService: Get.find<NativeService>(),
+          apiService: Get.find<ApiService>(),
+        ),
+        permanent: true,
+      );
+    }
 
     // Controller
     Get.lazyPut<HomeController>(

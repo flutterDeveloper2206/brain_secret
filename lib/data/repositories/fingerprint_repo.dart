@@ -12,6 +12,7 @@ abstract class FingerprintRepository {
     required double endX,
     required double endY,
   });
+
   Future<bool> startLiveScan({
     required bool isFrame,
     required bool isLfd,

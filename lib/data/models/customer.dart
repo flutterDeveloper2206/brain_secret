@@ -1,3 +1,5 @@
+import 'family_member.dart';
+
 class Customer {
   const Customer({
     required this.customerId,
@@ -29,6 +31,7 @@ class Customer {
     required this.franchiseCode,
     this.isActive = true,
     this.isDelete = false,
+    this.familyMembers = const [],
   });
 
   final int customerId;
@@ -60,6 +63,7 @@ class Customer {
   final int franchiseCode;
   final bool isActive;
   final bool isDelete;
+  final List<FamilyMember> familyMembers;
 
   factory Customer.fromJson(Map<String, dynamic> json) {
     return Customer(
@@ -97,6 +101,7 @@ class Customer {
           ? _asBool(json['is_active'])
           : true,
       isDelete: _asBool(json['is_delete']),
+      familyMembers: _parseFamilyMembers(json['family_members']),
     );
   }
 
@@ -132,6 +137,17 @@ class Customer {
       'is_active': isActive,
       'is_delete': isDelete,
     };
+  }
+
+  static List<FamilyMember> _parseFamilyMembers(dynamic raw) {
+    if (raw is! List) return const [];
+    final list = <FamilyMember>[];
+    for (final item in raw) {
+      if (item is Map) {
+        list.add(FamilyMember.fromJson(Map<String, dynamic>.from(item)));
+      }
+    }
+    return list;
   }
 
   static int _asInt(dynamic value) {

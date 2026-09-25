@@ -5,6 +5,8 @@ import '../../../data/repositories/auth_repo.dart';
 import '../../../data/repositories/auth_repo_impl.dart';
 import '../../../data/repositories/permissions_repo.dart';
 import '../../../data/repositories/permissions_repo_impl.dart';
+import '../../../data/repositories/user_repo.dart';
+import '../../../data/repositories/user_repo_impl.dart';
 import '../controllers/login_controller.dart';
 
 class LoginBinding extends Bindings {
@@ -19,6 +21,12 @@ class LoginBinding extends Bindings {
         permanent: true,
       );
     }
+    if (!Get.isRegistered<UserRepository>()) {
+      Get.put<UserRepository>(
+        UserRepositoryImpl(apiService: Get.find<ApiService>()),
+        permanent: true,
+      );
+    }
 
     if (!Get.isRegistered<AuthRepository>()) {
       Get.put<AuthRepository>(
@@ -30,6 +38,7 @@ class LoginBinding extends Bindings {
       () => LoginController(
         authRepository: Get.find<AuthRepository>(),
         permissionsRepository: Get.find<PermissionsRepository>(),
+        userRepository: Get.find<UserRepository>(),
         permissionService: Get.find<PermissionService>(),
         apiService: Get.find<ApiService>(),
       ),

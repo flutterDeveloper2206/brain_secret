@@ -4,11 +4,16 @@ import 'core/theme/theme_controller.dart';
 import 'core/values/app_constants.dart';
 import 'data/providers/api_service.dart';
 import 'data/providers/local_db.dart';
+import 'data/providers/native_service.dart';
 import 'data/providers/permission_service.dart';
 import 'data/repositories/auth_repo.dart';
 import 'data/repositories/auth_repo_impl.dart';
+import 'data/repositories/fingerprint_repo.dart';
+import 'data/repositories/fingerprint_repo_impl.dart';
 import 'data/repositories/permissions_repo.dart';
 import 'data/repositories/permissions_repo_impl.dart';
+import 'data/repositories/user_repo.dart';
+import 'data/repositories/user_repo_impl.dart';
 import 'routes/app_pages.dart';
 
 Future<void> main() async {
@@ -20,6 +25,7 @@ Future<void> main() async {
   Get.put(ThemeController());
   Get.put<LocalDb>(localDb, permanent: true);
   Get.put<ApiService>(ApiService(), permanent: true);
+  Get.put<NativeService>(NativeService(), permanent: true);
   Get.put<PermissionService>(
     PermissionService(localDb: localDb),
     permanent: true,
@@ -30,6 +36,17 @@ Future<void> main() async {
   );
   Get.put<PermissionsRepository>(
     PermissionsRepositoryImpl(apiService: Get.find<ApiService>()),
+    permanent: true,
+  );
+  Get.put<UserRepository>(
+    UserRepositoryImpl(apiService: Get.find<ApiService>()),
+    permanent: true,
+  );
+  Get.put<FingerprintRepository>(
+    FingerprintRepositoryImpl(
+      nativeService: Get.find<NativeService>(),
+      apiService: Get.find<ApiService>(),
+    ),
     permanent: true,
   );
 
@@ -47,7 +64,7 @@ class RidgeCounterApp extends StatelessWidget {
       title: AppConstants.appName,
       theme: themeController.lightTheme,
       darkTheme: themeController.darkTheme,
-      themeMode: ThemeMode.light,
+      themeMode: themeController.themeMode.value,
       initialRoute: AppPages.initial,
       getPages: AppPages.routes,
     );

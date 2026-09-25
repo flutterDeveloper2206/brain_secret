@@ -55,7 +55,15 @@ class MenuTab extends GetView<MainShellController> {
                     final permissionService = Get.find<PermissionService>();
                     final userType =
                         permissionService.session.value?.userType ?? '';
+                    final profile = permissionService.userProfile.value;
+                    final displayName = profile?.displayName ?? 'Account';
+                    final subtitle = (profile?.emailId.isNotEmpty ?? false)
+                        ? profile!.emailId
+                        : (profile?.userType.isNotEmpty ?? false)
+                        ? profile!.userType
+                        : userType;
                     final loggingOut = controller.isLoggingOut.value;
+                    final photoUrl = profile?.profilePhotoUrl;
 
                     return ListView(
                       padding: EdgeInsets.symmetric(
@@ -68,29 +76,38 @@ class MenuTab extends GetView<MainShellController> {
                           borderRadius: 18,
                           child: Row(
                             children: [
-                              CircleAvatar(
-                                backgroundColor: theme.colorScheme.primary
-                                    .withValues(alpha: 0.15),
-                                child: Icon(
-                                  Icons.person_outline,
-                                  color: theme.colorScheme.primary,
+                              if (photoUrl != null && photoUrl.isNotEmpty)
+                                CircleAvatar(
+                                  radius: 22,
+                                  backgroundColor: theme.colorScheme.primary
+                                      .withValues(alpha: 0.15),
+                                  backgroundImage: NetworkImage(photoUrl),
+                                  onBackgroundImageError: (_, __) {},
+                                )
+                              else
+                                CircleAvatar(
+                                  backgroundColor: theme.colorScheme.primary
+                                      .withValues(alpha: 0.15),
+                                  child: Icon(
+                                    Icons.person_outline,
+                                    color: theme.colorScheme.primary,
+                                  ),
                                 ),
-                              ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Account',
+                                      displayName,
                                       style: theme.textTheme.titleMedium
                                           ?.copyWith(
                                             fontWeight: FontWeight.w700,
                                           ),
                                     ),
-                                    if (userType.isNotEmpty)
+                                    if (subtitle.isNotEmpty)
                                       Text(
-                                        userType,
+                                        subtitle,
                                         style: theme.textTheme.bodySmall
                                             ?.copyWith(
                                               color: theme
@@ -111,100 +128,167 @@ class MenuTab extends GetView<MainShellController> {
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           borderRadius: 18,
-                          child: ListTile(
-                            leading: Icon(
-                              Icons.people_outline,
-                              color: theme.colorScheme.primary,
-                            ),
-                            title: Text(
-                              'Customers',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: ListTile(
+                              leading: Icon(
+                                Icons.account_circle_outlined,
+                                color: theme.colorScheme.primary,
                               ),
-                            ),
-                            trailing: Icon(
-                              Icons.chevron_right,
-                              color: theme.colorScheme.primary.withValues(
-                                alpha: 0.7,
+                              title: Text(
+                                'Profile',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
+                              trailing: Icon(
+                                Icons.chevron_right,
+                                color: theme.colorScheme.primary.withValues(
+                                  alpha: 0.7,
+                                ),
+                              ),
+                              onTap: () => Get.toNamed(Routes.userProfile),
                             ),
-                            onTap: () => Get.toNamed(Routes.customers),
                           ),
                         ),
                         GlassContainer(
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           borderRadius: 18,
-                          child: ListTile(
-                            leading: Icon(
-                              Icons.storefront_outlined,
-                              color: theme.colorScheme.primary,
-                            ),
-                            title: Text(
-                              'Franchises',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: ListTile(
+                              leading: Icon(
+                                Icons.people_outline,
+                                color: theme.colorScheme.primary,
                               ),
-                            ),
-                            trailing: Icon(
-                              Icons.chevron_right,
-                              color: theme.colorScheme.primary.withValues(
-                                alpha: 0.7,
+                              title: Text(
+                                'Customers',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
+                              trailing: Icon(
+                                Icons.chevron_right,
+                                color: theme.colorScheme.primary.withValues(
+                                  alpha: 0.7,
+                                ),
+                              ),
+                              onTap: () => Get.toNamed(Routes.customers),
                             ),
-                            onTap: () => Get.toNamed(Routes.franchises),
                           ),
                         ),
                         GlassContainer(
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           borderRadius: 18,
-                          child: ListTile(
-                            leading: Icon(
-                              Icons.badge_outlined,
-                              color: theme.colorScheme.primary,
-                            ),
-                            title: Text(
-                              'Staff / Employees',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: ListTile(
+                              leading: Icon(
+                                Icons.storefront_outlined,
+                                color: theme.colorScheme.primary,
                               ),
-                            ),
-                            trailing: Icon(
-                              Icons.chevron_right,
-                              color: theme.colorScheme.primary.withValues(
-                                alpha: 0.7,
+                              title: Text(
+                                'Franchises',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
+                              trailing: Icon(
+                                Icons.chevron_right,
+                                color: theme.colorScheme.primary.withValues(
+                                  alpha: 0.7,
+                                ),
+                              ),
+                              onTap: () => Get.toNamed(Routes.franchises),
                             ),
-                            onTap: () => Get.toNamed(Routes.staffs),
+                          ),
+                        ),
+                        GlassContainer(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          borderRadius: 18,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: ListTile(
+                              leading: Icon(
+                                Icons.badge_outlined,
+                                color: theme.colorScheme.primary,
+                              ),
+                              title: Text(
+                                'Staff / Employees',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              trailing: Icon(
+                                Icons.chevron_right,
+                                color: theme.colorScheme.primary.withValues(
+                                  alpha: 0.7,
+                                ),
+                              ),
+                              onTap: () => Get.toNamed(Routes.staffs),
+                            ),
+                          ),
+                        ),
+                        GlassContainer(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          borderRadius: 18,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: ListTile(
+                              leading: Icon(
+                                Icons.settings_outlined,
+                                color: theme.colorScheme.primary,
+                              ),
+                              title: Text(
+                                'Settings',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              trailing: Icon(
+                                Icons.chevron_right,
+                                color: theme.colorScheme.primary.withValues(
+                                  alpha: 0.7,
+                                ),
+                              ),
+                              onTap: () => Get.toNamed(Routes.settings),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 4),
                         GlassContainer(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           borderRadius: 18,
-                          child: ListTile(
-                            leading: loggingOut
-                                ? SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: ListTile(
+                              leading: loggingOut
+                                  ? SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: theme.colorScheme.error,
+                                      ),
+                                    )
+                                  : Icon(
+                                      Icons.logout,
                                       color: theme.colorScheme.error,
                                     ),
-                                  )
-                                : Icon(
-                                    Icons.logout,
-                                    color: theme.colorScheme.error,
-                                  ),
-                            title: Text(
-                              loggingOut ? 'Logging out...' : 'Logout',
-                              style: TextStyle(
-                                color: theme.colorScheme.error,
-                                fontWeight: FontWeight.w600,
+                              title: Text(
+                                loggingOut ? 'Logging out...' : 'Logout',
+                                style: TextStyle(
+                                  color: theme.colorScheme.error,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
+                              onTap:
+                                  loggingOut ? null : controller.confirmLogout,
                             ),
-                            onTap: loggingOut ? null : controller.confirmLogout,
                           ),
                         ),
                       ],

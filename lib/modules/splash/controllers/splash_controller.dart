@@ -4,6 +4,7 @@ import '../../../core/values/app_constants.dart';
 import '../../../data/providers/api_service.dart';
 import '../../../data/providers/permission_service.dart';
 import '../../../data/repositories/permissions_repo.dart';
+import '../../../data/repositories/user_repo.dart';
 import '../../../routes/app_routes.dart';
 
 class SplashController extends GetxController {
@@ -11,11 +12,13 @@ class SplashController extends GetxController {
     required this.apiService,
     required this.permissionService,
     required this.permissionsRepository,
+    required this.userRepository,
   });
 
   final ApiService apiService;
   final PermissionService permissionService;
   final PermissionsRepository permissionsRepository;
+  final UserRepository userRepository;
 
   bool _didNavigate = false;
 
@@ -53,6 +56,15 @@ class SplashController extends GetxController {
     try {
       final permissions = await permissionsRepository.fetchUserPermissions();
       await permissionService.applyPermissions(permissions);
+
+      try {
+        final userResponse = await userRepository.getCurrentUser();
+        permissionService.setUserProfile(userResponse.user);
+      } catch (_) {
+        // Non-blocking: allow home with empty profile placeholders.
+        permissionService.clearUserProfile();
+      }
+
       await _goHome();
     } catch (e) {
       // Invalid/expired token → clear and force login.

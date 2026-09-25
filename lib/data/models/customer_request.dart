@@ -1,4 +1,5 @@
 import 'customer.dart';
+import 'family_member.dart';
 
 class CustomerRequest {
   const CustomerRequest({
@@ -31,6 +32,7 @@ class CustomerRequest {
     required this.franchiseCode,
     this.isActive = true,
     this.isDelete = false,
+    this.familyMembers = const [],
   });
 
   final int customerId;
@@ -62,9 +64,10 @@ class CustomerRequest {
   final int franchiseCode;
   final bool isActive;
   final bool isDelete;
+  final List<FamilyMember> familyMembers;
 
   Map<String, dynamic> toJson() {
-    return Customer(
+    final json = Customer(
       customerId: customerId,
       customerFullName: customerFullName,
       emailId: emailId,
@@ -95,5 +98,8 @@ class CustomerRequest {
       isActive: isActive,
       isDelete: isDelete,
     ).toJson();
+
+    json['family_members'] = familyMembers.map((e) => e.toJson()).toList();
+    return json;
   }
 }

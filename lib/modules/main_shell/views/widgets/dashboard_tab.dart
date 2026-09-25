@@ -49,9 +49,17 @@ class DashboardTab extends GetView<HomeController> {
                             sliver: Obx(() {
                               final permissionService =
                                   Get.find<PermissionService>();
-                              final userType =
+                              final sessionType =
                                   permissionService.session.value?.userType ??
                                   'User';
+                              final profile = permissionService.userProfile.value;
+                              final userType =
+                                  (profile?.userType.isNotEmpty ?? false)
+                                  ? profile!.userType
+                                  : sessionType;
+                              final displayName = profile?.displayName;
+                              final email = profile?.emailId ?? '';
+                              final mobile = profile?.mobileNo ?? '';
                               final moduleCount =
                                   permissionService.sideBar.length;
                               final actionCount =
@@ -62,6 +70,9 @@ class DashboardTab extends GetView<HomeController> {
                                   _WelcomeHeader(
                                     theme: theme,
                                     userType: userType,
+                                    displayName: displayName,
+                                    email: email,
+                                    mobile: mobile,
                                   ),
                                   const SizedBox(height: 16),
                                   _StatsRow(
@@ -139,13 +150,27 @@ class _WelcomeHeader extends StatelessWidget {
   const _WelcomeHeader({
     required this.theme,
     required this.userType,
+    this.displayName,
+    this.email = '',
+    this.mobile = '',
   });
 
   final ThemeData theme;
   final String userType;
+  final String? displayName;
+  final String email;
+  final String mobile;
 
   @override
   Widget build(BuildContext context) {
+    final title = (displayName != null && displayName!.isNotEmpty)
+        ? displayName!
+        : AppConstants.appName;
+    final subtitleParts = <String>[
+      if (email.isNotEmpty) email,
+      if (mobile.isNotEmpty) mobile,
+    ];
+
     return GlassContainer(
       padding: const EdgeInsets.all(20),
       borderRadius: 22,
@@ -184,14 +209,25 @@ class _WelcomeHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  AppConstants.appName,
+                  title,
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.4,
                     color: theme.colorScheme.primary,
                   ),
                 ),
-                const SizedBox(height: 4),
+                if (subtitleParts.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitleParts.join(' · '),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.textTheme.bodyMedium?.color?.withValues(
+                        alpha: 0.65,
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,

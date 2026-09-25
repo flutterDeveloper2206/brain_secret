@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import '../models/login_data_session.dart';
 import '../models/permission_node.dart';
 import '../models/permissions_response.dart';
+import '../models/user_profile.dart';
 import 'local_db.dart';
 
 /// In-memory permission/session state backed by SQLite.
@@ -11,6 +12,7 @@ class PermissionService extends GetxService {
   final LocalDb localDb;
 
   final Rxn<LoginDataSession> session = Rxn<LoginDataSession>();
+  final Rxn<UserProfile> userProfile = Rxn<UserProfile>();
   final RxList<PermissionNode> sideBar = <PermissionNode>[].obs;
   final RxSet<int> actionCodes = <int>{}.obs;
   final RxSet<String> routes = <String>{}.obs;
@@ -53,8 +55,17 @@ class PermissionService extends GetxService {
     _applyPayload(payload);
   }
 
+  void setUserProfile(UserProfile? profile) {
+    userProfile.value = profile;
+  }
+
+  void clearUserProfile() {
+    userProfile.value = null;
+  }
+
   Future<void> clearAll() async {
     session.value = null;
+    userProfile.value = null;
     sideBar.clear();
     actionCodes.clear();
     routes.clear();
