@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../../core/widgets/app_document_field.dart';
 import '../../../../core/widgets/app_dropdown_field.dart';
+import '../../../../core/widgets/app_searchable_dropdown_field.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/form_section_card.dart';
 import '../../../../core/widgets/responsive_form_grid.dart';
@@ -182,6 +183,21 @@ class _EmploymentSection extends GetView<StaffProfileController> {
       icon: Icons.work_outline,
       child: ResponsiveFormGrid(
         children: [
+          Obx(
+            () => AppSearchableDropdownField<int>(
+              label: 'Company',
+              hint: 'Select company',
+              prefixIcon: Icons.apartment_outlined,
+              value: controller.selectedCompanyId.value,
+              displayLabel: controller.selectedCompanyLabel,
+              items: controller.companyDropdownItems,
+              isLoading: controller.isLoadingCompanies.value,
+              loadItems: controller.loadCompanies,
+              searchHint: 'Search company…',
+              onChanged: controller.onCompanySelected,
+              validator: (v) => v == null ? 'Company is required' : null,
+            ),
+          ),
           AppTextField(
             controller: controller.departmentController,
             label: 'Department',

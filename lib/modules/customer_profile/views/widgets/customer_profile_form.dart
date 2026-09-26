@@ -3,10 +3,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../../core/widgets/app_dropdown_field.dart';
+import '../../../../core/widgets/app_searchable_dropdown_field.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/form_section_card.dart';
 import '../../../../core/widgets/responsive_form_grid.dart';
-import '../../../../data/models/franchise_dropdown.dart';
 import '../../controllers/customer_profile_controller.dart';
 
 class CustomerProfileForm extends GetView<CustomerProfileController> {
@@ -19,12 +19,12 @@ class CustomerProfileForm extends GetView<CustomerProfileController> {
       child: Column(
         children: [
           if (kDebugMode) const _DebugDataSection(),
+          const _CompanyAssignmentSection(),
           const _BasicInformationSection(),
           const _AddressSection(),
           const _PersonalInformationSection(),
           const _FamilySection(),
           const _MedicalSection(),
-          const _BrainSecretsSection(),
         ],
       ),
     );
@@ -575,104 +575,52 @@ class _MedicalSection extends GetView<CustomerProfileController> {
   }
 }
 
-class _BrainSecretsSection extends GetView<CustomerProfileController> {
-  const _BrainSecretsSection();
+class _CompanyAssignmentSection extends GetView<CustomerProfileController> {
+  const _CompanyAssignmentSection();
 
   @override
   Widget build(BuildContext context) {
     return FormSectionCard(
       title: 'Company Assignment',
-      subtitle: 'Customer company and franchise codes',
+      subtitle: 'Select company, then franchise',
       icon: Icons.apartment_outlined,
       child: ResponsiveFormGrid(
         children: [
-          AppTextField(
-            controller: controller.companyCodeController,
-            label: 'Company Code',
-            hint: 'Enter company code',
-            prefixIcon: Icons.apartment_outlined,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            validator: (v) => (v == null || v.trim().isEmpty)
-                ? 'Company code is required'
-                : null,
+          Obx(
+            () => AppSearchableDropdownField<int>(
+              label: 'Company',
+              hint: 'Select company',
+              prefixIcon: Icons.apartment_outlined,
+              value: controller.selectedCompanyId.value,
+              displayLabel: controller.selectedCompanyLabel,
+              items: controller.companyDropdownItems,
+              isLoading: controller.isLoadingCompanies.value,
+              loadItems: controller.loadCompanies,
+              searchHint: 'Search company…',
+              onChanged: controller.onCompanySelected,
+              validator: (v) =>
+                  v == null || v <= 0 ? 'Company is required' : null,
+            ),
           ),
           Obx(() {
-            // Valid unique franchise codes only — never use 0 as dropdown value.
-            final seen = <int>{};
-            final items = <FranchiseDropdownItem>[];
-            for (final item in controller.franchiseOptions) {
-              if (item.franchiseCode <= 0) continue;
-              if (!seen.add(item.franchiseCode)) continue;
-              items.add(item);
-            }
-
-            final rawCurrent =
-                controller.selectedFranchiseCode.value ??
-                int.tryParse(controller.franchiseCodeController.text.trim());
-            final current =
-                (rawCurrent != null && rawCurrent > 0) ? rawCurrent : null;
-
-            if (current != null &&
-                !items.any((e) => e.franchiseCode == current)) {
-              items.insert(
-                0,
-                FranchiseDropdownItem(
-                  franchiseCode: current,
-                  franchiseName: 'Current',
-                ),
-              );
-            }
-
-            if (items.isEmpty) {
-              return AppTextField(
-                controller: controller.franchiseCodeController,
-                label: 'Franchise Code',
-                hint: 'Enter franchise code',
-                prefixIcon: Icons.storefront_outlined,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                validator: (v) {
-                  final code = int.tryParse(v?.trim() ?? '') ?? 0;
-                  if (code <= 0) return 'Franchise code is required';
-                  return null;
-                },
-              );
-            }
-
-            final resolved = current != null &&
-                    items.any((e) => e.franchiseCode == current)
-                ? current
-                : null;
-
-            return AppDropdownField<int>(
+            final hasCompany = controller.selectedCompanyId.value != null;
+            return AppSearchableDropdownField<int>(
               label: 'Franchise',
-              hint: 'Select franchise',
+              hint: hasCompany ? 'Select franchise' : 'Select company first',
               prefixIcon: Icons.storefront_outlined,
-              value: resolved,
-              items: [
-                for (final item in items)
-                  DropdownMenuItem<int>(
-                    value: item.franchiseCode,
-                    child: Text(
-                      item.franchiseName.isEmpty
-                          ? '${item.franchiseCode}'
-                          : '${item.franchiseCode} · ${item.franchiseName}',
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-              ],
+              value: controller.selectedFranchiseCode.value,
+              displayLabel: controller.selectedFranchiseLabel,
+              items: controller.franchiseDropdownItems,
+              isLoading: controller.isLoadingFranchises.value,
+              enabled: hasCompany,
+              loadItems: hasCompany ? controller.loadFranchisesSheet : null,
+              searchHint: 'Search franchise…',
+              emptyMessage: hasCompany
+                  ? 'No franchises for this company'
+                  : 'Select a company first',
               onChanged: controller.onFranchiseSelected,
-              validator: (v) {
-                if (v != null && v > 0) return null;
-                final typed =
-                    int.tryParse(
-                      controller.franchiseCodeController.text.trim(),
-                    ) ??
-                    0;
-                if (typed > 0) return null;
-                return 'Franchise is required';
-              },
+              validator: (v) =>
+                  v == null || v <= 0 ? 'Franchise is required' : null,
             );
           }),
         ],

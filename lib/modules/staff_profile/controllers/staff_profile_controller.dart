@@ -2,22 +2,28 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/errors/error_handler.dart';
+import '../../../core/widgets/app_searchable_dropdown_field.dart';
 import '../../../core/widgets/glass_snackbar.dart';
+import '../../../data/models/company_dropdown.dart';
 import '../../../data/models/create_staff_request.dart';
 import '../../../data/models/staff.dart';
+import '../../../data/repositories/franchise_repo.dart';
 import '../../../data/repositories/staff_repo.dart';
 import '../../../routes/app_routes.dart';
 
 class StaffProfileController extends GetxController {
-  StaffProfileController({required this.staffRepository});
+  StaffProfileController({
+    required this.staffRepository,
+    required this.franchiseRepository,
+  });
 
   final StaffRepository staffRepository;
+  final FranchiseRepository franchiseRepository;
 
   final formKey = GlobalKey<FormState>();
 
   final fullNameController = TextEditingController();
   final employeeIdController = TextEditingController(text: '0');
-  final companyCodeController = TextEditingController(text: '1');
   final mobileController = TextEditingController();
   final emailController = TextEditingController();
   final departmentController = TextEditingController();
@@ -33,11 +39,15 @@ class StaffProfileController extends GetxController {
   final Rxn<DateTime> dateOfJoining = Rxn<DateTime>();
   final RxBool isSaving = false.obs;
   final RxBool isLoading = false.obs;
+  final RxBool isLoadingCompanies = false.obs;
   final RxBool isEditMode = false.obs;
   final RxBool mobileVerified = false.obs;
   final RxBool obscurePassword = true.obs;
   final RxBool twoFactorEnabled = false.obs;
   final RxnString profilePhoto = RxnString();
+  final RxList<CompanyDropdownItem> companyOptions =
+      <CompanyDropdownItem>[].obs;
+  final RxnInt selectedCompanyId = RxnInt(1);
 
   final RxBool viewClients = false.obs;
   final RxBool addClients = false.obs;
@@ -57,11 +67,56 @@ class StaffProfileController extends GetxController {
   String get saveLabel =>
       isEditMode.value ? 'Update Staff' : 'Save Staff';
 
+  String get selectedCompanyLabel {
+    final id = selectedCompanyId.value;
+    if (id == null) return '';
+    for (final item in companyOptions) {
+      if (item.id == id) return item.value;
+    }
+    return 'Company #$id';
+  }
+
+  List<AppSearchableDropdownItem<int>> get companyDropdownItems =>
+      companyOptions
+          .map(
+            (c) => AppSearchableDropdownItem(value: c.id, label: c.value),
+          )
+          .toList();
+
   @override
   void onInit() {
     super.onInit();
     mobileController.addListener(_syncMobileVerified);
+    loadCompanies();
     _bootstrapFromArgs();
+  }
+
+  Future<List<AppSearchableDropdownItem<int>>> loadCompanies({
+    bool force = false,
+  }) async {
+    if (isClosed) return companyDropdownItems;
+    if (isLoadingCompanies.value && !force) return companyDropdownItems;
+    isLoadingCompanies.value = true;
+    try {
+      final response = await franchiseRepository.getCompanyDropdown();
+      if (isClosed) return const [];
+      companyOptions.assignAll(response.items);
+      final selected = selectedCompanyId.value;
+      if (selected == null && companyOptions.isNotEmpty) {
+        selectedCompanyId.value = companyOptions.first.id;
+      }
+      return companyDropdownItems;
+    } catch (e) {
+      if (!isClosed) ErrorHandler.handleError(e);
+      return companyDropdownItems;
+    } finally {
+      if (!isClosed) isLoadingCompanies.value = false;
+    }
+  }
+
+  void onCompanySelected(int? id) {
+    if (id == null || isClosed) return;
+    selectedCompanyId.value = id;
   }
 
   void _syncMobileVerified() {
@@ -140,8 +195,8 @@ class StaffProfileController extends GetxController {
       employeeIdController.text = '$id';
     }
     fullNameController.text = staff.employeeFullName;
-    companyCodeController.text =
-        staff.companyCode > 0 ? '${staff.companyCode}' : '1';
+    selectedCompanyId.value =
+        staff.companyCode > 0 ? staff.companyCode : 1;
     gender.value = staff.gender.isEmpty ? null : staff.gender;
     _applyDateString(staff.dob, isDob: true);
     _applyDateString(staff.joiningDate, isDob: false);
@@ -238,7 +293,7 @@ class StaffProfileController extends GetxController {
     if (!kDebugMode || isEditMode.value) return;
     try {
       fullNameController.text = 'Sneha Joshi';
-      companyCodeController.text = '1';
+      selectedCompanyId.value = 1;
       employeeIdController.text = '0';
       gender.value = 'Female';
       final dob = DateTime(1997, 8, 5);
@@ -270,7 +325,7 @@ class StaffProfileController extends GetxController {
 
     return CreateStaffRequest(
       employeeId: employeeId,
-      companyCode: int.tryParse(companyCodeController.text.trim()) ?? 1,
+      companyCode: selectedCompanyId.value ?? 1,
       employeeFullName: fullNameController.text.trim(),
       gender: gender.value ?? '',
       dob: _formatApiDate(dob),
@@ -349,7 +404,6 @@ class StaffProfileController extends GetxController {
     mobileController.removeListener(_syncMobileVerified);
     fullNameController.dispose();
     employeeIdController.dispose();
-    companyCodeController.dispose();
     mobileController.dispose();
     emailController.dispose();
     departmentController.dispose();

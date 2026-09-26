@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import '../models/company_dropdown.dart';
 import '../models/create_franchise_request.dart';
 import '../models/create_franchise_response.dart';
 import '../models/franchise_api_response.dart';
@@ -36,4 +37,6 @@ abstract class FranchiseRepository {
   Future<FranchiseApiResponse> softDeleteFranchise(int franchiseCode);
 
   Future<FranchiseDropdownResponse> getFranchiseDropdown(int companyCode);
+
+  Future<CompanyDropdownResponse> getCompanyDropdown({int parentId = 1});
 }

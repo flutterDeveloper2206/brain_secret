@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/values/app_constants.dart';
 import '../../../core/widgets/app_avatar.dart';
+import '../../../core/widgets/app_searchable_dropdown_field.dart';
 import '../../../core/widgets/glass_app_bar.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/gradient_background.dart';
@@ -96,12 +97,10 @@ class _MobileCustomersBody extends GetView<CustomersController> {
 
     return Column(
       children: [
-        _CustomersHeader(
-          theme: theme,
-          count: hasData ? customers.length : 0,
-        ),
+        const SizedBox(height: 8),
+        const _CompanyFranchiseFilters(),
         if (hasData) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           _SearchField(theme: theme),
           const SizedBox(height: 14),
         ] else
@@ -152,12 +151,10 @@ class _WideCustomersBody extends GetView<CustomersController> {
           width: 380,
           child: Column(
             children: [
-              _CustomersHeader(
-                theme: theme,
-                count: hasData ? customers.length : 0,
-              ),
+              const SizedBox(height: 8),
+              const _CompanyFranchiseFilters(),
               if (hasData) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 _SearchField(theme: theme),
                 const SizedBox(height: 14),
               ] else
@@ -218,75 +215,53 @@ class _WideCustomersBody extends GetView<CustomersController> {
   }
 }
 
-class _CustomersHeader extends StatelessWidget {
-  const _CustomersHeader({required this.theme, required this.count});
-
-  final ThemeData theme;
-  final int count;
+class _CompanyFranchiseFilters extends GetView<CustomersController> {
+  const _CompanyFranchiseFilters();
 
   @override
   Widget build(BuildContext context) {
-    return GlassContainer(
-      elevated: true,
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-      borderRadius: 20,
-      child: Row(
+    if (!Get.isRegistered<CustomersController>() || controller.isClosed) {
+      return const SizedBox.shrink();
+    }
+
+    return Obx(() {
+      if (controller.isClosed) return const SizedBox.shrink();
+      final hasCompany = controller.selectedCompanyId.value != null;
+
+      return Column(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(
-              Icons.people_alt_rounded,
-              color: theme.colorScheme.primary,
-            ),
+          AppSearchableDropdownField<int>(
+            label: 'Company',
+            hint: 'Select company',
+            prefixIcon: Icons.apartment_outlined,
+            value: controller.selectedCompanyId.value,
+            displayLabel: controller.selectedCompanyLabel,
+            items: controller.companyDropdownItems,
+            isLoading: controller.isLoadingCompanies.value,
+            loadItems: controller.loadCompanies,
+            searchHint: 'Search company…',
+            onChanged: controller.onCompanySelected,
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Customer directory',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  count == 0
-                      ? 'No profiles yet'
-                      : '$count customer${count == 1 ? '' : 's'} available',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.textTheme.bodyMedium?.color?.withValues(
-                      alpha: 0.62,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              '$count',
-              style: theme.textTheme.titleSmall?.copyWith(
-                color: theme.colorScheme.primary,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
+          const SizedBox(height: 10),
+          AppSearchableDropdownField<int>(
+            label: 'Franchise',
+            hint: hasCompany ? 'Select franchise' : 'Select company first',
+            prefixIcon: Icons.storefront_outlined,
+            value: controller.selectedFranchiseId.value,
+            displayLabel: controller.selectedFranchiseLabel,
+            items: controller.franchiseDropdownItems,
+            isLoading: controller.isLoadingFranchises.value,
+            enabled: hasCompany,
+            loadItems: hasCompany ? controller.loadFranchisesSheet : null,
+            searchHint: 'Search franchise…',
+            emptyMessage: hasCompany
+                ? 'No franchises for this company'
+                : 'Select a company first',
+            onChanged: controller.onFranchiseSelected,
           ),
         ],
-      ),
-    );
+      );
+    });
   }
 }
 
@@ -500,6 +475,26 @@ class _EmptyState extends GetView<CustomersController> {
 
   @override
   Widget build(BuildContext context) {
+    final needsCompany = controller.selectedCompanyId.value == null;
+    final needsFranchise = controller.selectedFranchiseId.value == null;
+    final searching = controller.searchQuery.value.isNotEmpty;
+
+    String title;
+    String subtitle;
+    if (needsCompany) {
+      title = 'Select a company';
+      subtitle = 'Choose a company above to load franchises.';
+    } else if (needsFranchise) {
+      title = 'Select a franchise';
+      subtitle = 'Choose a franchise to load customers.';
+    } else if (searching) {
+      title = 'No matches found';
+      subtitle = 'Try a different name, mobile, or city.';
+    } else {
+      title = 'No customers yet';
+      subtitle = 'Create your first customer profile to get started.';
+    }
+
     return Center(
       child: GlassContainer(
         elevated: true,
@@ -516,25 +511,23 @@ class _EmptyState extends GetView<CustomersController> {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                Icons.person_search_rounded,
+                needsCompany || needsFranchise
+                    ? Icons.filter_list_rounded
+                    : Icons.person_search_rounded,
                 size: 30,
                 color: theme.colorScheme.primary,
               ),
             ),
             const SizedBox(height: 16),
             Text(
-              controller.searchQuery.value.isEmpty
-                  ? 'No customers yet'
-                  : 'No matches found',
+              title,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w800,
               ),
             ),
             const SizedBox(height: 6),
             Text(
-              controller.searchQuery.value.isEmpty
-                  ? 'Create your first customer profile to get started.'
-                  : 'Try a different name, mobile, or city.',
+              subtitle,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.textTheme.bodyMedium?.color?.withValues(
@@ -542,7 +535,7 @@ class _EmptyState extends GetView<CustomersController> {
                 ),
               ),
             ),
-            if (controller.searchQuery.value.isEmpty) ...[
+            if (!needsCompany && !needsFranchise && !searching) ...[
               const SizedBox(height: 18),
               FilledButton.icon(
                 onPressed: controller.openCreateCustomer,

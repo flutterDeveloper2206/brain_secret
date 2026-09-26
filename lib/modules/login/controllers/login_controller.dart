@@ -84,7 +84,7 @@ class LoginController extends GetxController {
 
       try {
         final userResponse = await userRepository.getCurrentUser();
-        permissionService.setUserProfile(userResponse.user);
+        await permissionService.setUserProfile(userResponse.user);
       } catch (_) {
         // Profile fetch is non-blocking; dashboard/menu can still load.
         permissionService.clearUserProfile();

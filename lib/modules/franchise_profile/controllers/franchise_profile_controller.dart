@@ -6,7 +6,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/errors/error_handler.dart';
+import '../../../core/widgets/app_searchable_dropdown_field.dart';
 import '../../../core/widgets/glass_snackbar.dart';
+import '../../../data/models/company_dropdown.dart';
 import '../../../data/models/create_franchise_request.dart';
 import '../../../data/models/franchise.dart';
 import '../../../data/repositories/franchise_repo.dart';
@@ -47,7 +49,6 @@ class FranchiseProfileController extends GetxController {
   final formKey = GlobalKey<FormState>();
 
   final franchiseCodeController = TextEditingController(text: '0');
-  final companyCodeController = TextEditingController(text: '1');
   final franchiseNameController = TextEditingController();
   final ownerNameController = TextEditingController();
   final gstNumberController = TextEditingController();
@@ -66,18 +67,67 @@ class FranchiseProfileController extends GetxController {
 
   final RxBool isSaving = false.obs;
   final RxBool isLoading = false.obs;
+  final RxBool isLoadingCompanies = false.obs;
   final RxBool isEditMode = false.obs;
   final RxBool isActive = true.obs;
   final RxBool mobileVerified = false.obs;
   final RxnString panDocName = RxnString();
   final Rxn<FranchisePanFile> panDocFile = Rxn<FranchisePanFile>();
   final RxnString existingPanUrl = RxnString();
+  final RxList<CompanyDropdownItem> companyOptions =
+      <CompanyDropdownItem>[].obs;
+  final RxnInt selectedCompanyId = RxnInt(1);
+
+  String get selectedCompanyLabel {
+    final id = selectedCompanyId.value;
+    if (id == null) return '';
+    for (final item in companyOptions) {
+      if (item.id == id) return item.value;
+    }
+    return 'Company #$id';
+  }
+
+  List<AppSearchableDropdownItem<int>> get companyDropdownItems =>
+      companyOptions
+          .map(
+            (c) => AppSearchableDropdownItem(value: c.id, label: c.value),
+          )
+          .toList();
 
   @override
   void onInit() {
     super.onInit();
     mobileController.addListener(_syncMobileVerified);
+    loadCompanies();
     _bootstrapFromArgs();
+  }
+
+  Future<List<AppSearchableDropdownItem<int>>> loadCompanies({
+    bool force = false,
+  }) async {
+    if (isClosed) return companyDropdownItems;
+    if (isLoadingCompanies.value && !force) return companyDropdownItems;
+    isLoadingCompanies.value = true;
+    try {
+      final response = await franchiseRepository.getCompanyDropdown();
+      if (isClosed) return const [];
+      companyOptions.assignAll(response.items);
+      final selected = selectedCompanyId.value;
+      if (selected == null && companyOptions.isNotEmpty) {
+        selectedCompanyId.value = companyOptions.first.id;
+      }
+      return companyDropdownItems;
+    } catch (e) {
+      if (!isClosed) ErrorHandler.handleError(e);
+      return companyDropdownItems;
+    } finally {
+      if (!isClosed) isLoadingCompanies.value = false;
+    }
+  }
+
+  void onCompanySelected(int? id) {
+    if (id == null || isClosed) return;
+    selectedCompanyId.value = id;
   }
 
   void _bootstrapFromArgs() {
@@ -117,7 +167,8 @@ class FranchiseProfileController extends GetxController {
 
   void applyFranchise(Franchise franchise) {
     franchiseCodeController.text = franchise.franchiseCode.toString();
-    companyCodeController.text = franchise.companyCode.toString();
+    selectedCompanyId.value =
+        franchise.companyCode > 0 ? franchise.companyCode : 1;
     franchiseNameController.text = franchise.franchiseName;
     ownerNameController.text = franchise.ownerName;
     gstNumberController.text = franchise.gstNumber;
@@ -186,7 +237,7 @@ class FranchiseProfileController extends GetxController {
       if (!isEditMode.value) {
         franchiseCodeController.text = '0';
       }
-      companyCodeController.text = '1';
+      selectedCompanyId.value = 1;
       franchiseNameController.text = 'Vadodara Wellness Center';
       ownerNameController.text = 'Amit Mehta';
       gstNumberController.text = '24LMNOP9012Q3Z7';
@@ -219,7 +270,7 @@ class FranchiseProfileController extends GetxController {
   CreateFranchiseRequest _buildRequest() {
     return CreateFranchiseRequest(
       franchiseCode: int.tryParse(franchiseCodeController.text.trim()) ?? 0,
-      companyCode: int.tryParse(companyCodeController.text.trim()) ?? 1,
+      companyCode: selectedCompanyId.value ?? 1,
       franchiseName: franchiseNameController.text.trim(),
       ownerName: ownerNameController.text.trim(),
       gstNumber: gstNumberController.text.trim(),
@@ -304,7 +355,6 @@ class FranchiseProfileController extends GetxController {
   void onClose() {
     mobileController.removeListener(_syncMobileVerified);
     franchiseCodeController.dispose();
-    companyCodeController.dispose();
     franchiseNameController.dispose();
     ownerNameController.dispose();
     gstNumberController.dispose();

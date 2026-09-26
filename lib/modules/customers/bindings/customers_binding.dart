@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 import '../../../data/providers/api_service.dart';
 import '../../../data/repositories/customer_repo.dart';
 import '../../../data/repositories/customer_repo_impl.dart';
+import '../../../data/repositories/franchise_repo.dart';
+import '../../../data/repositories/franchise_repo_impl.dart';
 import '../controllers/customers_controller.dart';
 
 class CustomersBinding extends Bindings {
@@ -12,10 +14,16 @@ class CustomersBinding extends Bindings {
         () => CustomerRepositoryImpl(apiService: Get.find<ApiService>()),
       );
     }
+    if (!Get.isRegistered<FranchiseRepository>()) {
+      Get.lazyPut<FranchiseRepository>(
+        () => FranchiseRepositoryImpl(apiService: Get.find<ApiService>()),
+      );
+    }
     // fenix: recreate only when needed; avoids dispose mid-rebuild.
     Get.lazyPut<CustomersController>(
       () => CustomersController(
         customerRepository: Get.find<CustomerRepository>(),
+        franchiseRepository: Get.find<FranchiseRepository>(),
       ),
       fenix: true,
     );

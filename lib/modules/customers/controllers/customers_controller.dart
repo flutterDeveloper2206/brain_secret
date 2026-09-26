@@ -1,32 +1,83 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/errors/error_handler.dart';
+import '../../../core/widgets/app_searchable_dropdown_field.dart';
 import '../../../core/widgets/glass_popup.dart';
+import '../../../data/models/company_dropdown.dart';
 import '../../../data/models/customer.dart';
+import '../../../data/models/franchise_dropdown.dart';
 import '../../../data/models/get_all_customers_request.dart';
 import '../../../data/repositories/customer_repo.dart';
+import '../../../data/repositories/franchise_repo.dart';
 import '../../../routes/app_routes.dart';
 
 class CustomersController extends GetxController {
-  CustomersController({required this.customerRepository});
+  CustomersController({
+    required this.customerRepository,
+    required this.franchiseRepository,
+  });
 
   final CustomerRepository customerRepository;
+  final FranchiseRepository franchiseRepository;
 
   final RxBool isLoading = false.obs;
+  final RxBool isLoadingCompanies = false.obs;
+  final RxBool isLoadingFranchises = false.obs;
   final RxBool isDeleting = false.obs;
   final RxList<Customer> customers = <Customer>[].obs;
+  final RxList<CompanyDropdownItem> companyOptions =
+      <CompanyDropdownItem>[].obs;
+  final RxList<FranchiseDropdownItem> franchiseOptions =
+      <FranchiseDropdownItem>[].obs;
+  final RxnInt selectedCompanyId = RxnInt();
+  final RxnInt selectedFranchiseId = RxnInt();
   final RxString searchQuery = ''.obs;
   final RxnInt selectedCustomerId = RxnInt();
 
   final searchController = TextEditingController();
 
-  int companyCode = 1;
-  int franchiseCode = 1;
+  int get companyCode => selectedCompanyId.value ?? 0;
+  int get franchiseCode => selectedFranchiseId.value ?? 0;
+
+  String get selectedCompanyLabel {
+    final id = selectedCompanyId.value;
+    if (id == null) return '';
+    for (final item in companyOptions) {
+      if (item.id == id) return item.value;
+    }
+    return 'Company #$id';
+  }
+
+  String get selectedFranchiseLabel {
+    final id = selectedFranchiseId.value;
+    if (id == null) return '';
+    for (final item in franchiseOptions) {
+      if (item.franchiseCode == id) return item.franchiseName;
+    }
+    return 'Franchise #$id';
+  }
+
+  List<AppSearchableDropdownItem<int>> get companyDropdownItems =>
+      companyOptions
+          .map(
+            (c) => AppSearchableDropdownItem(value: c.id, label: c.value),
+          )
+          .toList();
+
+  List<AppSearchableDropdownItem<int>> get franchiseDropdownItems =>
+      franchiseOptions
+          .map(
+            (f) => AppSearchableDropdownItem(
+              value: f.franchiseCode,
+              label: f.franchiseName,
+            ),
+          )
+          .toList();
 
   @override
   void onInit() {
     super.onInit();
-    loadCustomers();
+    loadCompanies();
   }
 
   List<Customer> get filteredCustomers {
@@ -69,14 +120,93 @@ class CustomersController extends GetxController {
     selectedCustomerId.value = customer.customerId;
   }
 
-  Future<void> loadCustomers() async {
-    if (isClosed || isLoading.value) return;
+  Future<List<AppSearchableDropdownItem<int>>> loadCompanies({
+    bool force = false,
+  }) async {
+    if (isClosed) return companyDropdownItems;
+    if (isLoadingCompanies.value && !force) return companyDropdownItems;
+    isLoadingCompanies.value = true;
+    try {
+      final response = await franchiseRepository.getCompanyDropdown();
+      if (isClosed) return const [];
+      companyOptions.assignAll(response.items);
+      return companyDropdownItems;
+    } catch (e) {
+      if (!isClosed) ErrorHandler.handleError(e);
+      return companyDropdownItems;
+    } finally {
+      if (!isClosed) isLoadingCompanies.value = false;
+    }
+  }
+
+  Future<void> onCompanySelected(int? id) async {
+    if (isClosed || id == null) return;
+    if (selectedCompanyId.value == id) return;
+
+    selectedCompanyId.value = id;
+    selectedFranchiseId.value = null;
+    franchiseOptions.clear();
+    customers.clear();
+    selectedCustomerId.value = null;
+
+    await loadFranchisesForCompany(id);
+  }
+
+  Future<List<AppSearchableDropdownItem<int>>> loadFranchisesForCompany(
+    int companyId, {
+    bool force = false,
+  }) async {
+    if (isClosed) return franchiseDropdownItems;
+    if (isLoadingFranchises.value && !force) return franchiseDropdownItems;
+    isLoadingFranchises.value = true;
+    try {
+      final response =
+          await franchiseRepository.getFranchiseDropdown(companyId);
+      if (isClosed) return const [];
+      franchiseOptions.assignAll(
+        response.items
+            .where((f) => f.franchiseCode > 0)
+            .toList(),
+      );
+      return franchiseDropdownItems;
+    } catch (e) {
+      if (!isClosed) ErrorHandler.handleError(e);
+      return franchiseDropdownItems;
+    } finally {
+      if (!isClosed) isLoadingFranchises.value = false;
+    }
+  }
+
+  Future<List<AppSearchableDropdownItem<int>>> loadFranchisesSheet() async {
+    final companyId = selectedCompanyId.value;
+    if (companyId == null) return const [];
+    return loadFranchisesForCompany(companyId);
+  }
+
+  Future<void> onFranchiseSelected(int? id) async {
+    if (isClosed || id == null) return;
+    if (selectedFranchiseId.value == id) return;
+    selectedFranchiseId.value = id;
+    selectedCustomerId.value = null;
+    await loadCustomers(force: true);
+  }
+
+  Future<void> loadCustomers({bool force = false}) async {
+    if (isClosed || (isLoading.value && !force)) return;
+
+    final companyId = selectedCompanyId.value;
+    final franchiseId = selectedFranchiseId.value;
+    if (companyId == null || franchiseId == null) {
+      customers.clear();
+      return;
+    }
+
     isLoading.value = true;
     try {
       final response = await customerRepository.getAllCustomers(
         GetAllCustomersRequest(
-          companyCode: companyCode,
-          franchiseCode: franchiseCode,
+          companyCode: companyId,
+          franchiseCode: franchiseId,
         ),
       );
       if (isClosed) return;
@@ -88,6 +218,8 @@ class CustomersController extends GetxController {
             customers.isEmpty ? null : customers.first.customerId;
       } else if (selected == null && customers.isNotEmpty) {
         selectedCustomerId.value = customers.first.customerId;
+      } else if (customers.isEmpty) {
+        selectedCustomerId.value = null;
       }
     } catch (e) {
       if (!isClosed) ErrorHandler.handleError(e);
@@ -99,7 +231,7 @@ class CustomersController extends GetxController {
   void openCreateCustomer() {
     Get.toNamed(Routes.customerProfile)?.then((result) {
       if (isClosed) return;
-      if (result == true) loadCustomers();
+      if (result == true) loadCustomers(force: true);
     });
   }
 
@@ -109,7 +241,7 @@ class CustomersController extends GetxController {
       Routes.customerDetails,
       arguments: customer.customerId,
     )?.then((_) {
-      if (!isClosed) loadCustomers();
+      if (!isClosed) loadCustomers(force: true);
     });
   }
 
@@ -124,7 +256,7 @@ class CustomersController extends GetxController {
       },
     )?.then((result) {
       if (isClosed) return;
-      if (result == true) loadCustomers();
+      if (result == true) loadCustomers(force: true);
     });
   }
 

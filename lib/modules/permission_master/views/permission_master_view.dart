@@ -70,7 +70,8 @@ class PermissionMasterView extends GetView<PermissionMasterController> {
                     return const SizedBox.shrink();
                   }
 
-                  final loading = controller.isLoading.value &&
+                  final loading =
+                      controller.isLoading.value &&
                       controller.permissions.isEmpty;
 
                   if (loading) {
@@ -116,7 +117,6 @@ class _MobileBody extends GetView<PermissionMasterController> {
 
       return Column(
         children: [
-          _ListHeader(count: hasData ? list.length : 0),
           if (hasData) ...[
             const SizedBox(height: 12),
             const _SearchField(),
@@ -164,7 +164,6 @@ class _WideBody extends GetView<PermissionMasterController> {
             width: 400,
             child: Column(
               children: [
-                _ListHeader(count: hasData ? list.length : 0),
                 if (hasData) ...[
                   const SizedBox(height: 12),
                   const _SearchField(),
@@ -206,61 +205,6 @@ class _WideBody extends GetView<PermissionMasterController> {
         ],
       );
     });
-  }
-}
-
-class _ListHeader extends StatelessWidget {
-  const _ListHeader({required this.count});
-
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return GlassContainer(
-      elevated: true,
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-      borderRadius: 20,
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(
-              Icons.admin_panel_settings_rounded,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Permission List',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  count == 0
-                      ? 'Manage roles and access rights'
-                      : '$count permission${count == 1 ? '' : 's'}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -327,9 +271,7 @@ class _EmptyState extends GetView<PermissionMasterController> {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                searching
-                    ? Icons.search_off_rounded
-                    : Icons.shield_outlined,
+                searching ? Icons.search_off_rounded : Icons.shield_outlined,
                 size: 30,
                 color: theme.colorScheme.primary,
               ),
@@ -439,10 +381,7 @@ class _PermissionCard extends GetView<PermissionMasterController> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           border: selected
-              ? Border.all(
-                  color: primary.withValues(alpha: 0.55),
-                  width: 1.4,
-                )
+              ? Border.all(color: primary.withValues(alpha: 0.55), width: 1.4)
               : null,
         ),
         child: GlassContainer(
@@ -489,8 +428,7 @@ class _PermissionCard extends GetView<PermissionMasterController> {
                                   ),
                                   child: Text(
                                     '${item.permissionCode}',
-                                    style:
-                                        theme.textTheme.titleSmall?.copyWith(
+                                    style: theme.textTheme.titleSmall?.copyWith(
                                       color: primary,
                                       fontWeight: FontWeight.w800,
                                     ),
@@ -508,12 +446,13 @@ class _PermissionCard extends GetView<PermissionMasterController> {
                                         overflow: TextOverflow.ellipsis,
                                         style: theme.textTheme.titleSmall
                                             ?.copyWith(
-                                          fontWeight: FontWeight.w800,
-                                          letterSpacing: -0.2,
-                                          color: onSurface,
-                                        ),
+                                              fontWeight: FontWeight.w800,
+                                              letterSpacing: -0.2,
+                                              color: onSurface,
+                                            ),
                                       ),
-                                      if (item.permissionDescription
+                                      if (item
+                                          .permissionDescription
                                           .isNotEmpty) ...[
                                         const SizedBox(height: 3),
                                         Text(
@@ -522,10 +461,10 @@ class _PermissionCard extends GetView<PermissionMasterController> {
                                           overflow: TextOverflow.ellipsis,
                                           style: theme.textTheme.bodySmall
                                               ?.copyWith(
-                                            color: onSurface.withValues(
-                                              alpha: 0.58,
-                                            ),
-                                          ),
+                                                color: onSurface.withValues(
+                                                  alpha: 0.58,
+                                                ),
+                                              ),
                                         ),
                                       ],
                                       const SizedBox(height: 10),
@@ -595,10 +534,7 @@ class _PermissionCard extends GetView<PermissionMasterController> {
 }
 
 class _StatusPill extends StatelessWidget {
-  const _StatusPill({
-    required this.label,
-    required this.tone,
-  });
+  const _StatusPill({required this.label, required this.tone});
 
   final String label;
   final Color tone;
@@ -674,8 +610,9 @@ class _PermissionFormPanel extends GetView<PermissionMasterController> {
                               ? 'Update name, status, and description'
                               : 'Fill in the details and save',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.65),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.65,
+                            ),
                           ),
                         ),
                       ],
@@ -797,9 +734,7 @@ class _NameField extends GetView<PermissionMasterController> {
             hintText: 'e.g. Staff Permission',
             filled: true,
             fillColor: theme.colorScheme.surface.withValues(alpha: 0.55),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           ),
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
@@ -852,8 +787,9 @@ class _StatusTile extends GetView<PermissionMasterController> {
                   Text(
                     subtitle,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color:
-                          theme.colorScheme.onSurface.withValues(alpha: 0.65),
+                      color: theme.colorScheme.onSurface.withValues(
+                        alpha: 0.65,
+                      ),
                     ),
                   ),
                 ],

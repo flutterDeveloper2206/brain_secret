@@ -156,6 +156,23 @@ class LocalDb {
   Future<void> clearAll() async {
     await clearSession();
     await clearPermissions();
+    await clearActiveMasterAccountId();
+  }
+
+  Future<void> saveActiveMasterAccountId(int id) async {
+    final prefs = await _ensurePrefs();
+    await prefs.setInt('active_master_account_id', id);
+  }
+
+  Future<int?> getActiveMasterAccountId() async {
+    final prefs = await _ensurePrefs();
+    if (!prefs.containsKey('active_master_account_id')) return null;
+    return prefs.getInt('active_master_account_id');
+  }
+
+  Future<void> clearActiveMasterAccountId() async {
+    final prefs = await _ensurePrefs();
+    await prefs.remove('active_master_account_id');
   }
 
   Database _requireDb() {

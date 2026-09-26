@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import '../models/login_data_session.dart';
 import '../models/permission_node.dart';
 import '../models/permissions_response.dart';
+import '../models/user_master_account.dart';
 import '../models/user_profile.dart';
 import 'local_db.dart';
 
@@ -13,6 +14,7 @@ class PermissionService extends GetxService {
 
   final Rxn<LoginDataSession> session = Rxn<LoginDataSession>();
   final Rxn<UserProfile> userProfile = Rxn<UserProfile>();
+  final RxnInt activeAccountId = RxnInt();
   final RxList<PermissionNode> sideBar = <PermissionNode>[].obs;
   final RxSet<int> actionCodes = <int>{}.obs;
   final RxSet<String> routes = <String>{}.obs;
@@ -23,6 +25,16 @@ class PermissionService extends GetxService {
   }
 
   String? get token => session.value?.token;
+
+  UserMasterAccount? get activeAccount {
+    final profile = userProfile.value;
+    final id = activeAccountId.value;
+    if (profile == null || id == null) return null;
+    for (final account in profile.accounts) {
+      if (account.id == id) return account;
+    }
+    return null;
+  }
 
   bool hasAction(int actionCode) => actionCodes.contains(actionCode);
 
@@ -38,6 +50,11 @@ class PermissionService extends GetxService {
     final payload = await localDb.getPermissionsPayload();
     if (payload != null) {
       _applyPayload(payload);
+    }
+
+    final savedAccountId = await localDb.getActiveMasterAccountId();
+    if (savedAccountId != null) {
+      activeAccountId.value = savedAccountId;
     }
   }
 
@@ -55,17 +72,53 @@ class PermissionService extends GetxService {
     _applyPayload(payload);
   }
 
-  void setUserProfile(UserProfile? profile) {
+  Future<void> setUserProfile(UserProfile? profile) async {
     userProfile.value = profile;
+    if (profile == null) {
+      activeAccountId.value = null;
+      await localDb.clearActiveMasterAccountId();
+      return;
+    }
+    await _resolveActiveAccount(profile);
+  }
+
+  Future<void> setActiveAccount(int id) async {
+    final profile = userProfile.value;
+    if (profile == null) return;
+    final exists = profile.accounts.any((a) => a.id == id);
+    if (!exists) return;
+    activeAccountId.value = id;
+    await localDb.saveActiveMasterAccountId(id);
+  }
+
+  Future<void> _resolveActiveAccount(UserProfile profile) async {
+    final accounts = profile.accounts;
+    if (accounts.isEmpty) {
+      activeAccountId.value = null;
+      await localDb.clearActiveMasterAccountId();
+      return;
+    }
+
+    final saved = await localDb.getActiveMasterAccountId();
+    if (saved != null && accounts.any((a) => a.id == saved)) {
+      activeAccountId.value = saved;
+      return;
+    }
+
+    final fallback = profile.defaultAccountId ?? accounts.first.id;
+    activeAccountId.value = fallback;
+    await localDb.saveActiveMasterAccountId(fallback);
   }
 
   void clearUserProfile() {
     userProfile.value = null;
+    activeAccountId.value = null;
   }
 
   Future<void> clearAll() async {
     session.value = null;
     userProfile.value = null;
+    activeAccountId.value = null;
     sideBar.clear();
     actionCodes.clear();
     routes.clear();

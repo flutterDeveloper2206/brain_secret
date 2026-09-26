@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/values/app_constants.dart';
 import '../../../core/widgets/app_avatar.dart';
+import '../../../core/widgets/app_searchable_dropdown_field.dart';
 import '../../../core/widgets/glass_app_bar.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/gradient_background.dart';
@@ -106,8 +107,10 @@ class _MobileFranchisesBody extends GetView<FranchisesController> {
           theme: theme,
           count: hasData ? franchises.length : 0,
         ),
+        const SizedBox(height: 12),
+        const _CompanyFilterField(),
         if (hasData) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           _SearchField(theme: theme),
           const SizedBox(height: 14),
         ] else
@@ -166,8 +169,10 @@ class _WideFranchisesBody extends GetView<FranchisesController> {
                 theme: theme,
                 count: hasData ? franchises.length : 0,
               ),
+              const SizedBox(height: 12),
+              const _CompanyFilterField(),
               if (hasData) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 _SearchField(theme: theme),
                 const SizedBox(height: 14),
               ] else
@@ -298,6 +303,33 @@ class _FranchisesHeader extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _CompanyFilterField extends GetView<FranchisesController> {
+  const _CompanyFilterField();
+
+  @override
+  Widget build(BuildContext context) {
+    if (!Get.isRegistered<FranchisesController>() || controller.isClosed) {
+      return const SizedBox.shrink();
+    }
+
+    return Obx(() {
+      if (controller.isClosed) return const SizedBox.shrink();
+      return AppSearchableDropdownField<int>(
+        label: 'Company',
+        hint: 'Select company',
+        prefixIcon: Icons.apartment_outlined,
+        value: controller.selectedCompanyId.value,
+        displayLabel: controller.selectedCompanyLabel,
+        items: controller.companyDropdownItems,
+        isLoading: controller.isLoadingCompanies.value,
+        loadItems: controller.loadCompanies,
+        searchHint: 'Search company…',
+        onChanged: controller.onCompanySelected,
+      );
+    });
   }
 }
 

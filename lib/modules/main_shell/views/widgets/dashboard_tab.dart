@@ -53,13 +53,25 @@ class DashboardTab extends GetView<HomeController> {
                                   permissionService.session.value?.userType ??
                                   'User';
                               final profile = permissionService.userProfile.value;
+                              final active = permissionService.activeAccount;
+                              permissionService.activeAccountId.value;
+
                               final userType =
                                   (profile?.userType.isNotEmpty ?? false)
                                   ? profile!.userType
                                   : sessionType;
-                              final displayName = profile?.displayName;
-                              final email = profile?.emailId ?? '';
-                              final mobile = profile?.mobileNo ?? '';
+                              final displayName =
+                                  (active?.displayName.isNotEmpty ?? false)
+                                  ? active!.displayName
+                                  : profile?.displayName;
+                              final email = (active?.email?.isNotEmpty ?? false)
+                                  ? active!.email!
+                                  : (profile?.emailId ?? '');
+                              final mobile =
+                                  (active?.mobile?.isNotEmpty ?? false)
+                                  ? active!.mobile!
+                                  : (profile?.mobileNo ?? '');
+                              final accountSubtitle = active?.subtitle;
                               final moduleCount =
                                   permissionService.sideBar.length;
                               final actionCount =
@@ -73,6 +85,7 @@ class DashboardTab extends GetView<HomeController> {
                                     displayName: displayName,
                                     email: email,
                                     mobile: mobile,
+                                    accountSubtitle: accountSubtitle,
                                   ),
                                   const SizedBox(height: 16),
                                   _StatsRow(
@@ -153,6 +166,7 @@ class _WelcomeHeader extends StatelessWidget {
     this.displayName,
     this.email = '',
     this.mobile = '',
+    this.accountSubtitle,
   });
 
   final ThemeData theme;
@@ -160,6 +174,7 @@ class _WelcomeHeader extends StatelessWidget {
   final String? displayName;
   final String email;
   final String mobile;
+  final String? accountSubtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -167,6 +182,8 @@ class _WelcomeHeader extends StatelessWidget {
         ? displayName!
         : AppConstants.appName;
     final subtitleParts = <String>[
+      if (accountSubtitle != null && accountSubtitle!.isNotEmpty)
+        accountSubtitle!,
       if (email.isNotEmpty) email,
       if (mobile.isNotEmpty) mobile,
     ];

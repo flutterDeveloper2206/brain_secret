@@ -173,10 +173,13 @@ class ErrorHandler {
 
   /// Global error UI. Use [popOnNotFound] to leave the current screen when
   /// the resource no longer exists (e.g. deleted customer/franchise).
+  /// Set [forceLogout] to false when the caller already handles 401 navigation
+  /// (e.g. splash session restore) to avoid racing `offAllNamed(login)`.
   static void handleError(
     dynamic error, {
     bool popOnNotFound = false,
     VoidCallback? onNotFound,
+    bool forceLogout = true,
   }) {
     final kind = classify(error);
     final appError = error is AppException ? error : null;
@@ -208,7 +211,7 @@ class ErrorHandler {
       duration: const Duration(seconds: 4),
     );
 
-    if (kind == AppErrorKind.unauthorized) {
+    if (kind == AppErrorKind.unauthorized && forceLogout) {
       _forceLogoutToLogin();
       return;
     }

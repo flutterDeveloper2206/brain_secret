@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/errors/error_handler.dart';
+import '../../../core/widgets/app_searchable_dropdown_field.dart';
 import '../../../core/widgets/glass_popup.dart';
+import '../../../data/models/company_dropdown.dart';
 import '../../../data/models/franchise.dart';
 import '../../../data/models/get_all_franchises_request.dart';
 import '../../../data/repositories/franchise_repo.dart';
@@ -13,19 +15,40 @@ class FranchisesController extends GetxController {
   final FranchiseRepository franchiseRepository;
 
   final RxBool isLoading = false.obs;
+  final RxBool isLoadingCompanies = false.obs;
   final RxBool isDeleting = false.obs;
   final RxBool isToggling = false.obs;
   final RxList<Franchise> franchises = <Franchise>[].obs;
+  final RxList<CompanyDropdownItem> companyOptions =
+      <CompanyDropdownItem>[].obs;
+  final RxnInt selectedCompanyId = RxnInt(1);
   final RxString searchQuery = ''.obs;
   final RxnInt selectedFranchiseCode = RxnInt();
 
   final searchController = TextEditingController();
 
-  int companyCode = 1;
+  int get companyCode => selectedCompanyId.value ?? 1;
+
+  String get selectedCompanyLabel {
+    final id = selectedCompanyId.value;
+    if (id == null) return '';
+    for (final item in companyOptions) {
+      if (item.id == id) return item.value;
+    }
+    return 'Company #$id';
+  }
+
+  List<AppSearchableDropdownItem<int>> get companyDropdownItems =>
+      companyOptions
+          .map(
+            (c) => AppSearchableDropdownItem(value: c.id, label: c.value),
+          )
+          .toList();
 
   @override
   void onInit() {
     super.onInit();
+    loadCompanies();
     loadFranchises();
   }
 
@@ -68,6 +91,40 @@ class FranchisesController extends GetxController {
   void selectFranchise(Franchise franchise) {
     if (isClosed) return;
     selectedFranchiseCode.value = franchise.franchiseCode;
+  }
+
+  Future<List<AppSearchableDropdownItem<int>>> loadCompanies({
+    bool force = false,
+  }) async {
+    if (isClosed) return companyDropdownItems;
+    if (isLoadingCompanies.value && !force) return companyDropdownItems;
+    isLoadingCompanies.value = true;
+    try {
+      final response = await franchiseRepository.getCompanyDropdown();
+      if (isClosed) return const [];
+      companyOptions.assignAll(response.items);
+      if (selectedCompanyId.value == null && companyOptions.isNotEmpty) {
+        selectedCompanyId.value = companyOptions.first.id;
+      } else if (selectedCompanyId.value != null &&
+          companyOptions.isNotEmpty &&
+          companyOptions.every((c) => c.id != selectedCompanyId.value)) {
+        selectedCompanyId.value = companyOptions.first.id;
+      }
+      return companyDropdownItems;
+    } catch (e) {
+      if (!isClosed) ErrorHandler.handleError(e);
+      return companyDropdownItems;
+    } finally {
+      if (!isClosed) isLoadingCompanies.value = false;
+    }
+  }
+
+  Future<void> onCompanySelected(int? id) async {
+    if (isClosed || id == null) return;
+    if (selectedCompanyId.value == id) return;
+    selectedCompanyId.value = id;
+    selectedFranchiseCode.value = null;
+    await loadFranchises(force: true);
   }
 
   Future<void> loadFranchises({bool force = false}) async {

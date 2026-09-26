@@ -8,19 +8,25 @@ class FranchiseDropdownItem {
   final String franchiseName;
 
   factory FranchiseDropdownItem.fromJson(Map<String, dynamic> json) {
+    // API shape is often `{ id, value }` where value is the display name.
+    final rawValue = json['value'];
+    final valueAsCode = rawValue is num ||
+            (rawValue is String && int.tryParse(rawValue.trim()) != null)
+        ? rawValue
+        : null;
+
     return FranchiseDropdownItem(
       franchiseCode: _asInt(
         json['franchise_code'] ??
-            json['value'] ??
             json['id'] ??
-            json['code'],
+            json['code'] ??
+            valueAsCode,
       ),
-      franchiseName:
-          json['franchise_name']?.toString() ??
+      franchiseName: json['franchise_name']?.toString() ??
           json['label']?.toString() ??
           json['name']?.toString() ??
           json['text']?.toString() ??
-          '',
+          (valueAsCode == null ? (rawValue?.toString() ?? '') : ''),
     );
   }
 

@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 import '../../../data/providers/api_service.dart';
+import '../../../data/repositories/franchise_repo.dart';
+import '../../../data/repositories/franchise_repo_impl.dart';
 import '../../../data/repositories/staff_repo.dart';
 import '../../../data/repositories/staff_repo_impl.dart';
 import '../controllers/staff_profile_controller.dart';
@@ -12,11 +14,19 @@ class StaffProfileBinding extends Bindings {
         () => StaffRepositoryImpl(apiService: Get.find<ApiService>()),
       );
     }
+    if (!Get.isRegistered<FranchiseRepository>()) {
+      Get.lazyPut<FranchiseRepository>(
+        () => FranchiseRepositoryImpl(apiService: Get.find<ApiService>()),
+      );
+    }
     if (Get.isRegistered<StaffProfileController>()) {
       Get.delete<StaffProfileController>(force: true);
     }
     Get.put<StaffProfileController>(
-      StaffProfileController(staffRepository: Get.find<StaffRepository>()),
+      StaffProfileController(
+        staffRepository: Get.find<StaffRepository>(),
+        franchiseRepository: Get.find<FranchiseRepository>(),
+      ),
     );
   }
 }

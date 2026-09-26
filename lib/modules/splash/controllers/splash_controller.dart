@@ -3,7 +3,6 @@ import '../../../core/errors/error_handler.dart';
 import '../../../core/values/app_constants.dart';
 import '../../../data/providers/api_service.dart';
 import '../../../data/providers/permission_service.dart';
-import '../../../data/repositories/permissions_repo.dart';
 import '../../../data/repositories/user_repo.dart';
 import '../../../routes/app_routes.dart';
 
@@ -11,13 +10,11 @@ class SplashController extends GetxController {
   SplashController({
     required this.apiService,
     required this.permissionService,
-    required this.permissionsRepository,
     required this.userRepository,
   });
 
   final ApiService apiService;
   final PermissionService permissionService;
-  final PermissionsRepository permissionsRepository;
   final UserRepository userRepository;
 
   bool _didNavigate = false;
@@ -36,16 +33,24 @@ class SplashController extends GetxController {
         _resolveSession(),
       ]);
     } catch (e) {
-      ErrorHandler.handleError(e);
+      // Unexpected bootstrap failure: if we already have a token, still go home.
+      final token = permissionService.token;
+      if (token != null && token.isNotEmpty) {
+        apiService.setAuthToken(token);
+        await _goHome();
+        return;
+      }
+      ErrorHandler.handleError(e, forceLogout: false);
       await _goLogin();
     }
   }
 
   Future<void> _resolveSession() async {
+    // Restore session + cached permissions from local storage only.
+    // Permissions API is fetched only after successful login.
     await permissionService.hydrateFromLocal();
     final token = permissionService.token;
 
-    // No token → do not call permissions API; go to login.
     if (token == null || token.isEmpty) {
       await _goLogin();
       return;
@@ -53,26 +58,15 @@ class SplashController extends GetxController {
 
     apiService.setAuthToken(token);
 
+    // Non-blocking profile refresh for dashboard (not persisted).
     try {
-      final permissions = await permissionsRepository.fetchUserPermissions();
-      await permissionService.applyPermissions(permissions);
-
-      try {
-        final userResponse = await userRepository.getCurrentUser();
-        permissionService.setUserProfile(userResponse.user);
-      } catch (_) {
-        // Non-blocking: allow home with empty profile placeholders.
-        permissionService.clearUserProfile();
-      }
-
-      await _goHome();
-    } catch (e) {
-      // Invalid/expired token → clear and force login.
-      await permissionService.clearAll();
-      apiService.setAuthToken(null);
-      ErrorHandler.handleError(e);
-      await _goLogin();
+      final userResponse = await userRepository.getCurrentUser();
+      await permissionService.setUserProfile(userResponse.user);
+    } catch (_) {
+      permissionService.clearUserProfile();
     }
+
+    await _goHome();
   }
 
   Future<void> _goLogin() async {

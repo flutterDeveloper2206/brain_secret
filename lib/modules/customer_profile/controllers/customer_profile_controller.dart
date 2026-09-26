@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/errors/error_handler.dart';
+import '../../../core/widgets/app_searchable_dropdown_field.dart';
 import '../../../core/widgets/glass_snackbar.dart';
+import '../../../data/models/company_dropdown.dart';
 import '../../../data/models/customer.dart';
 import '../../../data/models/customer_request.dart';
 import '../../../data/models/family_member.dart';
@@ -154,8 +156,6 @@ class CustomerProfileController extends GetxController {
   final motherNameController = TextEditingController();
   final spouseNameController = TextEditingController();
   final emergencyContactController = TextEditingController();
-  final companyCodeController = TextEditingController(text: '1');
-  final franchiseCodeController = TextEditingController(text: '1');
 
   final RxnString gender = RxnString();
   final RxnString maritalStatus = RxnString();
@@ -163,13 +163,18 @@ class CustomerProfileController extends GetxController {
   final Rxn<DateTime> dateOfBirth = Rxn<DateTime>();
   final RxBool isSaving = false.obs;
   final RxBool isLoading = false.obs;
+  final RxBool isLoadingCompanies = false.obs;
+  final RxBool isLoadingFranchises = false.obs;
   final RxBool mobileVerified = false.obs;
   final RxBool hasMedicalIssue = false.obs;
   final RxBool hasPsychologicalIssue = false.obs;
   final RxBool isRightHandDominant = true.obs;
   final RxBool isEditMode = false.obs;
+  final RxList<CompanyDropdownItem> companyOptions =
+      <CompanyDropdownItem>[].obs;
   final RxList<FranchiseDropdownItem> franchiseOptions =
       <FranchiseDropdownItem>[].obs;
+  final RxnInt selectedCompanyId = RxnInt();
   final RxnInt selectedFranchiseCode = RxnInt();
   final RxList<FamilyMemberFormItem> familyMembers =
       <FamilyMemberFormItem>[].obs;
@@ -181,21 +186,92 @@ class CustomerProfileController extends GetxController {
   final maritalStatuses = const ['Single', 'Married', 'Divorced', 'Widowed'];
   final languages = const ['English', 'Hindi', 'Gujarati', 'Marathi', 'Other'];
 
+  String get selectedCompanyLabel {
+    final id = selectedCompanyId.value;
+    if (id == null) return '';
+    for (final item in companyOptions) {
+      if (item.id == id) return item.value;
+    }
+    return 'Company #$id';
+  }
+
+  String get selectedFranchiseLabel {
+    final id = selectedFranchiseCode.value;
+    if (id == null) return '';
+    for (final item in franchiseOptions) {
+      if (item.franchiseCode == id) return item.franchiseName;
+    }
+    return 'Franchise #$id';
+  }
+
+  List<AppSearchableDropdownItem<int>> get companyDropdownItems =>
+      companyOptions
+          .map(
+            (c) => AppSearchableDropdownItem(value: c.id, label: c.value),
+          )
+          .toList();
+
+  List<AppSearchableDropdownItem<int>> get franchiseDropdownItems =>
+      franchiseOptions
+          .map(
+            (f) => AppSearchableDropdownItem(
+              value: f.franchiseCode,
+              label: f.franchiseName.isEmpty
+                  ? '${f.franchiseCode}'
+                  : f.franchiseName,
+            ),
+          )
+          .toList();
+
   @override
   void onInit() {
     super.onInit();
     mobileController.addListener(_syncMobileVerified);
     _bootstrapFromArgs();
-    loadFranchiseDropdown();
+    loadCompanies();
   }
 
-  Future<void> loadFranchiseDropdown() async {
+  Future<List<AppSearchableDropdownItem<int>>> loadCompanies({
+    bool force = false,
+  }) async {
+    if (isClosed) return companyDropdownItems;
+    if (isLoadingCompanies.value && !force) return companyDropdownItems;
+    isLoadingCompanies.value = true;
     try {
-      final companyCode =
-          int.tryParse(companyCodeController.text.trim()) ?? 1;
-      final response = await franchiseRepository.getFranchiseDropdown(
-        companyCode,
-      );
+      final response = await franchiseRepository.getCompanyDropdown();
+      if (isClosed) return const [];
+      companyOptions.assignAll(response.items);
+      return companyDropdownItems;
+    } catch (e) {
+      if (!isClosed) ErrorHandler.handleError(e);
+      return companyDropdownItems;
+    } finally {
+      if (!isClosed) isLoadingCompanies.value = false;
+    }
+  }
+
+  Future<void> onCompanySelected(int? id) async {
+    if (isClosed || id == null) return;
+    final isSame = selectedCompanyId.value == id;
+    selectedCompanyId.value = id;
+    if (!isSame) {
+      selectedFranchiseCode.value = null;
+      franchiseOptions.clear();
+    }
+    await loadFranchisesForCompany(id);
+  }
+
+  Future<List<AppSearchableDropdownItem<int>>> loadFranchisesForCompany(
+    int companyId, {
+    bool force = false,
+  }) async {
+    if (isClosed) return franchiseDropdownItems;
+    if (isLoadingFranchises.value && !force) return franchiseDropdownItems;
+    isLoadingFranchises.value = true;
+    try {
+      final response =
+          await franchiseRepository.getFranchiseDropdown(companyId);
+      if (isClosed) return const [];
       final unique = <FranchiseDropdownItem>[];
       final seen = <int>{};
       for (final item in response.items) {
@@ -205,28 +281,32 @@ class CustomerProfileController extends GetxController {
       }
       franchiseOptions.assignAll(unique);
 
-      final current =
-          selectedFranchiseCode.value ??
-          int.tryParse(franchiseCodeController.text.trim());
+      final current = selectedFranchiseCode.value;
       if (current != null &&
           current > 0 &&
-          franchiseOptions.any((e) => e.franchiseCode == current)) {
-        selectedFranchiseCode.value = current;
-        franchiseCodeController.text = '$current';
-      } else if (!isEditMode.value &&
-          (selectedFranchiseCode.value == null ||
-              (selectedFranchiseCode.value ?? 0) <= 0) &&
-          franchiseOptions.isNotEmpty) {
-        selectedFranchiseCode.value = franchiseOptions.first.franchiseCode;
-        franchiseCodeController.text =
-            '${franchiseOptions.first.franchiseCode}';
-      } else if (current == null || current <= 0) {
-        selectedFranchiseCode.value = null;
+          !franchiseOptions.any((e) => e.franchiseCode == current)) {
+        // Keep edit selection visible even if missing from dropdown.
+        franchiseOptions.insert(
+          0,
+          FranchiseDropdownItem(
+            franchiseCode: current,
+            franchiseName: 'Current',
+          ),
+        );
       }
+      return franchiseDropdownItems;
     } catch (e) {
-      // Dropdown is optional for save — keep typed/existing franchise code.
-      ErrorHandler.handleError(e);
+      if (!isClosed) ErrorHandler.handleError(e);
+      return franchiseDropdownItems;
+    } finally {
+      if (!isClosed) isLoadingFranchises.value = false;
     }
+  }
+
+  Future<List<AppSearchableDropdownItem<int>>> loadFranchisesSheet() async {
+    final companyId = selectedCompanyId.value;
+    if (companyId == null) return const [];
+    return loadFranchisesForCompany(companyId);
   }
 
   void onFranchiseSelected(int? code) {
@@ -235,7 +315,6 @@ class CustomerProfileController extends GetxController {
       return;
     }
     selectedFranchiseCode.value = code;
-    franchiseCodeController.text = '$code';
   }
 
   void addFamilyMember() {
@@ -376,14 +455,14 @@ class CustomerProfileController extends GetxController {
     hasMedicalIssue.value = customer.anyMedicalIssue;
     hasPsychologicalIssue.value = customer.anyPsychologicalIssue;
     isRightHandDominant.value = customer.leftRightHandDominat;
-    companyCodeController.text = customer.companyCode > 0
-        ? customer.companyCode.toString()
-        : '1';
-    if (customer.franchiseCode > 0) {
-      franchiseCodeController.text = customer.franchiseCode.toString();
-      selectedFranchiseCode.value = customer.franchiseCode;
+    selectedCompanyId.value =
+        customer.companyCode > 0 ? customer.companyCode : null;
+    selectedFranchiseCode.value =
+        customer.franchiseCode > 0 ? customer.franchiseCode : null;
+    if (selectedCompanyId.value != null) {
+      loadFranchisesForCompany(selectedCompanyId.value!);
     } else {
-      selectedFranchiseCode.value = null;
+      franchiseOptions.clear();
     }
     _setFamilyMembers(customer.familyMembers);
     _syncMobileVerified();
@@ -443,8 +522,9 @@ class CustomerProfileController extends GetxController {
       hasMedicalIssue.value = true;
       hasPsychologicalIssue.value = false;
       isRightHandDominant.value = true;
-      companyCodeController.text = '1';
-      franchiseCodeController.text = '1';
+      selectedCompanyId.value = 1;
+      selectedFranchiseCode.value = 1;
+      loadFranchisesForCompany(1);
       _setFamilyMembers([
         const FamilyMember(
           customerFullName: 'Prem',
@@ -526,11 +606,6 @@ class CustomerProfileController extends GetxController {
     final parsedId = int.tryParse(customerIdController.text.trim()) ?? 0;
     final customerId = editingCustomerId > 0 ? editingCustomerId : parsedId;
 
-    final franchiseCode =
-        selectedFranchiseCode.value ??
-        int.tryParse(franchiseCodeController.text.trim()) ??
-        0;
-
     return CustomerRequest(
       customerId: customerId,
       customerFullName: fullNameController.text.trim(),
@@ -557,8 +632,8 @@ class CustomerProfileController extends GetxController {
       anyMedicalIssue: hasMedicalIssue.value,
       anyPsychologicalIssue: hasPsychologicalIssue.value,
       leftRightHandDominat: isRightHandDominant.value,
-      companyCode: int.tryParse(companyCodeController.text.trim()) ?? 0,
-      franchiseCode: franchiseCode,
+      companyCode: selectedCompanyId.value ?? 0,
+      franchiseCode: selectedFranchiseCode.value ?? 0,
       // Backend treats missing is_active as false and hides the row from list.
       isActive: true,
       isDelete: false,
@@ -575,9 +650,19 @@ class CustomerProfileController extends GetxController {
       return;
     }
 
-    final selectedCode = selectedFranchiseCode.value;
-    if (selectedCode != null && selectedCode > 0) {
-      franchiseCodeController.text = '$selectedCode';
+    if ((selectedCompanyId.value ?? 0) <= 0) {
+      GlassSnackbar.warning(
+        'Please select a company.',
+        title: 'Incomplete form',
+      );
+      return;
+    }
+    if ((selectedFranchiseCode.value ?? 0) <= 0) {
+      GlassSnackbar.warning(
+        'Please select a franchise.',
+        title: 'Incomplete form',
+      );
+      return;
     }
 
     final request = _buildRequest();
@@ -648,8 +733,6 @@ class CustomerProfileController extends GetxController {
     motherNameController.dispose();
     spouseNameController.dispose();
     emergencyContactController.dispose();
-    companyCodeController.dispose();
-    franchiseCodeController.dispose();
     _clearFamilyMembers();
     super.onClose();
   }

@@ -106,50 +106,69 @@ class DeviceScanView extends GetView<DeviceScanController> {
                     const SizedBox(height: 8),
                     Obx(() {
                       final scans = controller.capturedScans;
+                      final saving = controller.isSaving.value;
                       return Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: List.generate(3, (index) {
                           final hasImage = scans.length > index;
                           return Expanded(
-                            child: Container(
-                              height: 85,
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              decoration: BoxDecoration(
-                                color: hasImage 
-                                    ? theme.cardColor 
-                                    : theme.colorScheme.primary.withValues(alpha: 0.05),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: hasImage 
-                                      ? Colors.greenAccent 
-                                      : theme.colorScheme.primary.withValues(alpha: 0.2),
-                                  width: hasImage ? 2 : 1,
+                            child: GestureDetector(
+                              onTap: hasImage || saving
+                                  ? null
+                                  : () => controller.fillDummyScan(index),
+                              child: Container(
+                                height: 85,
+                                margin: const EdgeInsets.symmetric(horizontal: 4),
+                                decoration: BoxDecoration(
+                                  color: hasImage
+                                      ? theme.cardColor
+                                      : theme.colorScheme.primary
+                                          .withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: hasImage
+                                        ? Colors.greenAccent
+                                        : theme.colorScheme.primary
+                                            .withValues(alpha: 0.2),
+                                    width: hasImage ? 2 : 1,
+                                  ),
                                 ),
-                              ),
-                              clipBehavior: Clip.antiAlias,
-                              child: hasImage
-                                  ? Image.memory(
-                                      scans[index],
-                                      fit: BoxFit.cover,
-                                    )
-                                  : Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.fingerprint,
-                                          size: 24,
-                                          color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          "Pass #${index + 1}",
-                                          style: textTheme.bodySmall?.copyWith(
-                                            fontSize: 10,
-                                            color: textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                                clipBehavior: Clip.antiAlias,
+                                child: hasImage
+                                    ? Image.memory(
+                                        scans[index],
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.fingerprint,
+                                            size: 24,
+                                            color: theme.colorScheme.primary
+                                                .withValues(alpha: 0.3),
                                           ),
-                                        ),
-                                      ],
-                                    ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            "Pass #${index + 1}",
+                                            style: textTheme.bodySmall?.copyWith(
+                                              fontSize: 10,
+                                              color: textTheme.bodySmall?.color
+                                                  ?.withValues(alpha: 0.6),
+                                            ),
+                                          ),
+                                          Text(
+                                            "Tap dummy",
+                                            style: textTheme.bodySmall?.copyWith(
+                                              fontSize: 9,
+                                              color: theme.colorScheme.primary
+                                                  .withValues(alpha: 0.7),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                              ),
                             ),
                           );
                         }),
@@ -199,14 +218,24 @@ class DeviceScanView extends GetView<DeviceScanController> {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4.0),
                         child: Obx(() => ElevatedButton(
-                              onPressed: controller.capturedScans.length < 3
+                              onPressed: controller.isSaving.value ||
+                                      controller.capturedScans.length < 3
                                   ? null
                                   : () => controller.saveScan(),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green,
                                 foregroundColor: Colors.white,
                               ),
-                              child: const Text("Save"),
+                              child: controller.isSaving.value
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Text("Save"),
                             )),
                       ),
                     ),

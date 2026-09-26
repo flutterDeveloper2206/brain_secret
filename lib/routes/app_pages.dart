@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import '../modules/analysis/bindings/analysis_binding.dart';
 import '../modules/analysis/views/analysis_view.dart';
+import '../modules/analyze_fingerprints/bindings/analyze_fingerprints_binding.dart';
+import '../modules/analyze_fingerprints/views/analyze_fingerprints_view.dart';
 import '../modules/device_scan/bindings/device_scan_binding.dart';
 import '../modules/device_scan/views/device_scan_view.dart';
 import '../modules/hand_selector/bindings/hand_selector_binding.dart';
@@ -151,6 +153,11 @@ class AppPages {
       name: Routes.handSelector,
       page: () => const HandSelectorView(),
       binding: HandSelectorBinding(),
+    ),
+    GetPage(
+      name: Routes.analyzeFingerprints,
+      page: () => const AnalyzeFingerprintsView(),
+      binding: AnalyzeFingerprintsBinding(),
     ),
   ];
 }

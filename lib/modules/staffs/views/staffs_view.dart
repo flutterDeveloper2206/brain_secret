@@ -96,7 +96,6 @@ class _MobileStaffsBody extends GetView<StaffsController> {
 
     return Column(
       children: [
-        _StaffsHeader(theme: theme, count: hasData ? staffList.length : 0),
         if (hasData) ...[
           const SizedBox(height: 12),
           _SearchField(theme: theme),
@@ -149,10 +148,6 @@ class _WideStaffsBody extends GetView<StaffsController> {
           width: 380,
           child: Column(
             children: [
-              _StaffsHeader(
-                theme: theme,
-                count: hasData ? staffList.length : 0,
-              ),
               if (hasData) ...[
                 const SizedBox(height: 12),
                 _SearchField(theme: theme),
@@ -182,8 +177,7 @@ class _WideStaffsBody extends GetView<StaffsController> {
                                 staff: staff,
                                 selected: selected,
                                 onTap: () => controller.selectStaff(staff),
-                                onDelete: () =>
-                                    controller.confirmDelete(staff),
+                                onDelete: () => controller.confirmDelete(staff),
                               );
                             });
                           },
@@ -211,75 +205,6 @@ class _WideStaffsBody extends GetView<StaffsController> {
           }),
         ),
       ],
-    );
-  }
-}
-
-class _StaffsHeader extends StatelessWidget {
-  const _StaffsHeader({required this.theme, required this.count});
-
-  final ThemeData theme;
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    return GlassContainer(
-      elevated: true,
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-      borderRadius: 20,
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(Icons.badge_outlined, color: theme.colorScheme.primary),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Staff directory',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  count == 0
-                      ? 'No staff yet'
-                      : '$count staff member${count == 1 ? '' : 's'} available',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.textTheme.bodyMedium?.color?.withValues(
-                      alpha: 0.62,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              '$count',
-              style: theme.textTheme.titleSmall?.copyWith(
-                color: theme.colorScheme.primary,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -440,10 +365,11 @@ class _StaffListCard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: (staff.isActive
-                                ? Colors.green
-                                : theme.colorScheme.error)
-                            .withValues(alpha: 0.12),
+                        color:
+                            (staff.isActive
+                                    ? Colors.green
+                                    : theme.colorScheme.error)
+                                .withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(

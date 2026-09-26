@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../core/errors/exceptions.dart';
 import '../../core/values/app_constants.dart';
+import '../models/company_dropdown.dart';
 import '../models/create_franchise_request.dart';
 import '../models/create_franchise_response.dart';
 import '../models/franchise_api_response.dart';
@@ -288,6 +289,43 @@ class FranchiseRepositoryImpl implements FranchiseRepository {
     } catch (e) {
       throw ServerException(
         'Unable to load franchise dropdown. Please try again.',
+      );
+    }
+  }
+
+  @override
+  Future<CompanyDropdownResponse> getCompanyDropdown({
+    int parentId = 1,
+  }) async {
+    try {
+      _ensureToken();
+      final response = await apiService.safeGet(
+        AppConstants.companyDropdownUrl(parentId),
+      );
+
+      final body = response.body;
+      if (body is! Map) {
+        throw ServerException('Unexpected company dropdown response.');
+      }
+
+      final dropdownResponse = CompanyDropdownResponse.fromJson(
+        Map<String, dynamic>.from(body),
+      );
+
+      if (!dropdownResponse.isSuccess) {
+        throw ServerException(
+          dropdownResponse.message.isEmpty
+              ? 'Unable to load company dropdown.'
+              : dropdownResponse.message,
+        );
+      }
+
+      return dropdownResponse;
+    } on AppException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(
+        'Unable to load company dropdown. Please try again.',
       );
     }
   }

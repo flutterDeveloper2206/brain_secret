@@ -53,6 +53,17 @@ class AppConstants {
   static const String softDeleteFranchiseEndpoint =
       'entity/soft-delete-franchise';
   static const String franchiseDropdownEndpoint = 'entity/dropdown/franchise';
+  static const String companyDropdownEndpoint = 'entity/dropdown/company';
+  static String companyDropdownUrl([int parentId = 1]) =>
+      '$companyDropdownEndpoint/$parentId';
+  static const String addCustomerFingerprintEndpoint =
+      'fingerprint/add-customer-fingerprint';
+  static String getCustomerFingerprintsEndpoint(int customerId) =>
+      'fingerprint/get-customer-fingerprints/$customerId';
+  static const String updateCustomerFingerprintEndpoint =
+      'fingerprint/update-customer-fingerprint';
+  /// Static customer used for fingerprint add/analyze until picker exists.
+  static const int defaultFingerprintCustomerId = 13;
   static const String appName = 'Brain Secret';
   static const String appTagline = 'Fingerprint Ridge Counter';
   static const String appVersion = '1.0.0';

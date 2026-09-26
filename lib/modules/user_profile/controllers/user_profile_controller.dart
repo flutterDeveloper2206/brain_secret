@@ -32,7 +32,7 @@ class UserProfileController extends GetxController {
     try {
       final response = await userRepository.getCurrentUser();
       profile.value = response.user;
-      permissionService.setUserProfile(response.user);
+      await permissionService.setUserProfile(response.user);
     } catch (e) {
       ErrorHandler.handleError(e);
     } finally {
