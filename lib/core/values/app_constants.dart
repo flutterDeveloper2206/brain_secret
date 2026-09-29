@@ -36,6 +36,8 @@ class AppConstants {
   static const String deleteCustomerEndpoint = 'master/soft-delete-customer';
   static const String getAllCustomersEndpoint = 'master/get-all-customers';
   static const String getCustomerEndpoint = 'master/get-customer';
+  static String getCustomersFamilyEndpoint(int customerId) =>
+      'master/get-customers-family/$customerId';
   static const String createStaffEndpoint = 'master/create-staff';
   static const String updateStaffEndpoint = 'master/update-staff';
   static const String getAllStaffEndpoint = 'master/get-all-staff';

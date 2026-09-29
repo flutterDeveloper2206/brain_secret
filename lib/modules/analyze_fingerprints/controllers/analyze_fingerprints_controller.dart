@@ -1,11 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import '../../../core/errors/error_handler.dart';
-import '../../../core/values/app_constants.dart';
-import '../../../core/widgets/glass_snackbar.dart';
 import '../../../data/models/customer_fingerprint.dart';
+import '../../../data/models/entity_picker_result.dart';
 import '../../../data/repositories/fingerprint_repo.dart';
-import '../views/widgets/fingerprint_edit_sheet.dart';
+import '../../../routes/app_routes.dart';
 
 class AnalyzeFingerprintsController extends GetxController {
   AnalyzeFingerprintsController({required this.repository});
@@ -14,7 +13,18 @@ class AnalyzeFingerprintsController extends GetxController {
 
   final RxList<CustomerFingerprint> fingerprints = <CustomerFingerprint>[].obs;
   final RxBool isLoading = false.obs;
-  final RxBool isUpdating = false.obs;
+  final Rxn<EntityPickerResult> selectedEntity = Rxn<EntityPickerResult>();
+
+  bool get hasSelection => selectedEntity.value != null;
+
+  String get selectionLabel {
+    final entity = selectedEntity.value;
+    if (entity == null) return '';
+    if (entity.familyName.trim().isNotEmpty) {
+      return entity.familyName;
+    }
+    return entity.customerName;
+  }
 
   int get totalScans => fingerprints.length;
   int get fingerCount => groupedByFingerName.length;
@@ -75,17 +85,23 @@ class AnalyzeFingerprintsController extends GetxController {
     return imageName;
   }
 
-  @override
-  void onInit() {
-    super.onInit();
-    loadFingerprints();
+  Future<void> openEntityPicker() async {
+    final result = await Get.toNamed(Routes.entityPicker);
+    if (result is! EntityPickerResult) return;
+
+    selectedEntity.value = result;
+    fingerprints.clear();
+    await loadFingerprints();
   }
 
   Future<void> loadFingerprints() async {
+    final entity = selectedEntity.value;
+    if (entity == null) return;
+
     isLoading.value = true;
     try {
       final list = await repository.getCustomerFingerprints(
-        customerId: AppConstants.defaultFingerprintCustomerId,
+        customerId: entity.familyId,
       );
       fingerprints.assignAll(list);
     } catch (e) {
@@ -98,53 +114,10 @@ class AnalyzeFingerprintsController extends GetxController {
   Future<void> refreshList() => loadFingerprints();
 
   Future<void> openEdit(CustomerFingerprint item) async {
-    await Get.bottomSheet(
-      FingerprintEditSheet(
-        item: item,
-        isUpdating: isUpdating,
-        onSave: (type, value) => _updateFingerprint(
-          fingerprintId: item.fingerprintId,
-          fingerType: type,
-          fingerValue: value,
-        ),
-      ),
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      ignoreSafeArea: false,
+    final result = await Get.toNamed(
+      Routes.analysis,
+      arguments: {'fingerprint': item},
     );
-  }
-
-  Future<bool> _updateFingerprint({
-    required int fingerprintId,
-    required String fingerType,
-    required int fingerValue,
-  }) async {
-    if (isUpdating.value) return false;
-    isUpdating.value = true;
-    try {
-      await repository.updateCustomerFingerprint(
-        fingerprintId: fingerprintId,
-        fingerType: fingerType,
-        fingerValue: fingerValue,
-      );
-
-      final index = fingerprints.indexWhere(
-        (f) => f.fingerprintId == fingerprintId,
-      );
-      if (index >= 0) {
-        fingerprints[index] = fingerprints[index].copyWith(
-          fingerType: fingerType,
-          fingerValue: fingerValue,
-        );
-      }
-
-      GlassSnackbar.success('Analysis saved', title: 'Updated');
-      return true;
-    } catch (e) {
-      ErrorHandler.handleError(e);
-      return false;
-    } finally {
-      if (!isClosed) isUpdating.value = false;
-    }
+    if (result == true) await loadFingerprints();
   }
 }

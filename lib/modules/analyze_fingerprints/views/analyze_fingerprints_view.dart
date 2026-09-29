@@ -18,7 +18,16 @@ class AnalyzeFingerprintsView extends GetView<AnalyzeFingerprintsController> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       backgroundColor: Colors.transparent,
-      appBar: const GlassAppBar(title: 'Analyze Fingerprints'),
+      appBar: GlassAppBar(
+        title: 'Analyze Fingerprints',
+        actions: [
+          IconButton(
+            tooltip: 'Select entity',
+            icon: const Icon(Icons.account_tree_outlined),
+            onPressed: controller.openEntityPicker,
+          ),
+        ],
+      ),
       floatingActionButton: const ThemeSelectorFab(
         heroTag: 'analyze_fingerprints_theme_fab',
       ),
@@ -34,7 +43,8 @@ class AnalyzeFingerprintsView extends GetView<AnalyzeFingerprintsController> {
                     maxWidth: isNarrow ? double.infinity : 720,
                   ),
                   child: Obx(() {
-                    final _ = controller.fingerprints.length;
+                    controller.fingerprints.length;
+                    controller.selectedEntity.value;
 
                     if (controller.isLoading.value &&
                         controller.fingerprints.isEmpty) {
@@ -45,35 +55,90 @@ class AnalyzeFingerprintsView extends GetView<AnalyzeFingerprintsController> {
                       );
                     }
 
+                    if (!controller.hasSelection) {
+                      return ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(24),
+                        children: [
+                          const SizedBox(height: 48),
+                          Icon(
+                            Icons.account_tree_outlined,
+                            size: 40,
+                            color: theme.colorScheme.primary
+                                .withValues(alpha: 0.4),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Select an entity',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Tap the hierarchy icon to select company → franchise → customer → family.',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.textTheme.bodyMedium?.color
+                                  ?.withValues(alpha: 0.65),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Center(
+                            child: FilledButton.icon(
+                              onPressed: controller.openEntityPicker,
+                              icon: const Icon(Icons.account_tree_outlined),
+                              label: const Text('Select entity'),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+
                     if (controller.fingerprints.isEmpty) {
                       return RefreshIndicator(
                         onRefresh: controller.refreshList,
-                        child: ListView(
+                        child: CustomScrollView(
                           physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.all(24),
-                          children: [
-                            const SizedBox(height: 48),
-                            Icon(
-                              Icons.fingerprint,
-                              size: 40,
-                              color: theme.colorScheme.primary
-                                  .withValues(alpha: 0.4),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'No fingerprints yet',
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              'Add scans from Menu → Add Fingerprint first.',
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.textTheme.bodyMedium?.color
-                                    ?.withValues(alpha: 0.65),
+                          slivers: [
+                            SliverFillRemaining(
+                              hasScrollBody: false,
+                              child: Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(24),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.fingerprint,
+                                        size: 40,
+                                        color: theme.colorScheme.primary
+                                            .withValues(alpha: 0.4),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        'No fingerprints yet',
+                                        textAlign: TextAlign.center,
+                                        style: theme.textTheme.titleMedium
+                                            ?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'No scans found for ${controller.selectionLabel}.',
+                                        textAlign: TextAlign.center,
+                                        style:
+                                            theme.textTheme.bodySmall?.copyWith(
+                                          color: theme
+                                              .textTheme.bodyMedium?.color
+                                              ?.withValues(alpha: 0.65),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                           ],
@@ -95,6 +160,7 @@ class AnalyzeFingerprintsView extends GetView<AnalyzeFingerprintsController> {
                         ),
                         children: [
                           _CompactSummary(
+                            label: controller.selectionLabel,
                             fingers: controller.fingerCount,
                             scans: controller.totalScans,
                             analyzed: controller.analyzedCount,
@@ -150,11 +216,13 @@ class AnalyzeFingerprintsView extends GetView<AnalyzeFingerprintsController> {
 
 class _CompactSummary extends StatelessWidget {
   const _CompactSummary({
+    required this.label,
     required this.fingers,
     required this.scans,
     required this.analyzed,
   });
 
+  final String label;
   final int fingers;
   final int scans;
   final int analyzed;
@@ -172,10 +240,12 @@ class _CompactSummary extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              'Customer #${AppConstants.defaultFingerprintCustomerId}',
+              label,
               style: theme.textTheme.labelLarge?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           _MiniChip(label: '$fingers fingers'),

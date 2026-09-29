@@ -1,3 +1,4 @@
+import '../models/company_dropdown.dart';
 import '../models/customer_api_response.dart';
 import '../models/customer_request.dart';
 import '../models/get_all_customers_request.dart';
@@ -11,4 +12,7 @@ abstract class CustomerRepository {
     GetAllCustomersRequest request,
   );
   Future<GetCustomerResponse> getCustomer(int customerId);
+
+  /// Family members for a customer as `{ id, value }` dropdown rows.
+  Future<List<CompanyDropdownItem>> getCustomersFamily(int customerId);
 }

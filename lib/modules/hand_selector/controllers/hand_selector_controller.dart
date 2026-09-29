@@ -1,17 +1,39 @@
 import 'dart:typed_data';
+
 import 'package:get/get.dart';
+
+import '../../../data/models/entity_picker_result.dart';
 import '../../../routes/app_routes.dart';
 
 class HandSelectorController extends GetxController {
   // Map of fingerCode -> List of 3 scan byte arrays
-  final RxMap<String, List<Uint8List>> scannedFingers = <String, List<Uint8List>>{}.obs;
-  
+  final RxMap<String, List<Uint8List>> scannedFingers =
+      <String, List<Uint8List>>{}.obs;
+
   // Currently selected finger (e.g., 'L1', 'L2', etc.)
   final RxnString selectedFinger = RxnString();
 
+  final Rxn<EntityPickerResult> selectedEntity = Rxn<EntityPickerResult>();
+
+  String get entityDisplayName {
+    final entity = selectedEntity.value;
+    if (entity == null) return '';
+    if (entity.familyName.trim().isNotEmpty) return entity.familyName;
+    return entity.customerName;
+  }
+
+  @override
+  void onInit() {
+    super.onInit();
+    final args = Get.arguments as Map<String, dynamic>?;
+    final entity = args?['entity'];
+    if (entity is EntityPickerResult) {
+      selectedEntity.value = entity;
+    }
+  }
+
   void selectFinger(String fingerCode) {
     if (selectedFinger.value == fingerCode) {
-      // Toggle off if clicked again
       selectedFinger.value = null;
     } else {
       selectedFinger.value = fingerCode;
@@ -19,12 +41,13 @@ class HandSelectorController extends GetxController {
   }
 
   bool isFingerScanned(String fingerCode) {
-    return scannedFingers.containsKey(fingerCode) && scannedFingers[fingerCode]!.length == 3;
+    return scannedFingers.containsKey(fingerCode) &&
+        scannedFingers[fingerCode]!.length == 3;
   }
 
   void saveFingerScans(String fingerCode, List<Uint8List> scans) {
     scannedFingers[fingerCode] = scans;
-    selectedFinger.value = null; // Clear selection after saving
+    selectedFinger.value = null;
   }
 
   void startScanning() {
@@ -40,7 +63,7 @@ class HandSelectorController extends GetxController {
   String getFingerName(String code) {
     final isLeft = code.startsWith('L');
     final num = code.substring(1);
-    final fingerNames = {
+    const fingerNames = {
       '1': 'Thumb',
       '2': 'Index Finger',
       '3': 'Middle Finger',

@@ -21,4 +21,5 @@ abstract class Routes {
   static const deviceScan = '/deviceScan';
   static const handSelector = '/handSelector';
   static const analyzeFingerprints = '/analyzeFingerprints';
+  static const entityPicker = '/entityPicker';
 }

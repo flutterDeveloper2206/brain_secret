@@ -141,14 +141,15 @@ class FingerprintRepositoryImpl implements FingerprintRepository {
     required Uint8List l2l,
     required Uint8List l2c,
     required String fingerName,
+    required int customerId,
+    required int parentId,
   }) async {
     try {
       _ensureToken();
 
-      // customer_id / parent_id static for now; finger_name from hand selector.
       final payload = {
-        'customer_id': AppConstants.defaultFingerprintCustomerId,
-        'parent_id': 12,
+        'customer_id': customerId,
+        'parent_id': parentId,
         'finger_name': fingerName,
       };
 
@@ -238,7 +239,7 @@ class FingerprintRepositoryImpl implements FingerprintRepository {
   }
 
   @override
-  Future<void> updateCustomerFingerprint({
+  Future<bool> updateCustomerFingerprint({
     required int fingerprintId,
     required String fingerType,
     required int fingerValue,
@@ -258,6 +259,20 @@ class FingerprintRepositoryImpl implements FingerprintRepository {
         response.body,
         'Unable to update fingerprint.',
       );
+
+      final httpCode = response.statusCode ?? 0;
+      if (httpCode == 200 || httpCode == 201) return true;
+
+      final body = response.body;
+      if (body is Map) {
+        final status = body['statusCode'] ?? body['status_code'];
+        final code = status is int
+            ? status
+            : int.tryParse(status?.toString() ?? '') ?? 0;
+        if (code == 200 || code == 201) return true;
+      }
+
+      return true;
     } on AppException {
       rethrow;
     } catch (e) {

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:get/get.dart';
 import '../../../core/errors/error_handler.dart';
+import '../../../core/values/app_constants.dart';
 import '../../../core/widgets/glass_snackbar.dart';
 import '../../../data/repositories/fingerprint_repo.dart';
 import '../../hand_selector/controllers/hand_selector_controller.dart';
@@ -204,11 +205,24 @@ class DeviceScanController extends GetxController {
     isSaving.value = true;
     statusText.value = "Uploading fingerprint images...";
     try {
+      int customerId = AppConstants.defaultFingerprintCustomerId;
+      int parentId = 12;
+
+      if (Get.isRegistered<HandSelectorController>()) {
+        final entity = Get.find<HandSelectorController>().selectedEntity.value;
+        if (entity != null) {
+          customerId = entity.familyId;
+          parentId = entity.customerId;
+        }
+      }
+
       await repository.addCustomerFingerprint(
         l2r: capturedScans[0],
         l2l: capturedScans[1],
         l2c: capturedScans[2],
         fingerName: fingerCode,
+        customerId: customerId,
+        parentId: parentId,
       );
 
       if (Get.isRegistered<HandSelectorController>()) {

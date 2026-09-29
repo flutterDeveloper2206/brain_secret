@@ -5,6 +5,8 @@ import '../modules/analyze_fingerprints/bindings/analyze_fingerprints_binding.da
 import '../modules/analyze_fingerprints/views/analyze_fingerprints_view.dart';
 import '../modules/device_scan/bindings/device_scan_binding.dart';
 import '../modules/device_scan/views/device_scan_view.dart';
+import '../modules/entity_picker/bindings/entity_picker_binding.dart';
+import '../modules/entity_picker/views/entity_picker_view.dart';
 import '../modules/hand_selector/bindings/hand_selector_binding.dart';
 import '../modules/hand_selector/views/hand_selector_view.dart';
 import '../modules/login/bindings/login_binding.dart';
@@ -151,13 +153,18 @@ class AppPages {
     ),
     GetPage(
       name: Routes.handSelector,
-      page: () => const HandSelectorView(),
+      page: () =>  HandSelectorView(),
       binding: HandSelectorBinding(),
     ),
     GetPage(
       name: Routes.analyzeFingerprints,
       page: () => const AnalyzeFingerprintsView(),
       binding: AnalyzeFingerprintsBinding(),
+    ),
+    GetPage(
+      name: Routes.entityPicker,
+      page: () => const EntityPickerView(),
+      binding: EntityPickerBinding(),
     ),
   ];
 }

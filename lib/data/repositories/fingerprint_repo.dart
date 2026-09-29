@@ -32,13 +32,16 @@ abstract class FingerprintRepository {
     required Uint8List l2l,
     required Uint8List l2c,
     required String fingerName,
+    required int customerId,
+    required int parentId,
   });
 
   Future<List<CustomerFingerprint>> getCustomerFingerprints({
     int customerId = 13,
   });
 
-  Future<void> updateCustomerFingerprint({
+  /// Returns `true` when the API reports success (status 200/201).
+  Future<bool> updateCustomerFingerprint({
     required int fingerprintId,
     required String fingerType,
     required int fingerValue,

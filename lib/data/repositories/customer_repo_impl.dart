@@ -1,5 +1,6 @@
 import '../../core/errors/exceptions.dart';
 import '../../core/values/app_constants.dart';
+import '../models/company_dropdown.dart';
 import '../models/customer_api_response.dart';
 import '../models/customer_request.dart';
 import '../models/get_all_customers_request.dart';
@@ -179,6 +180,45 @@ class CustomerRepositoryImpl implements CustomerRepository {
     } catch (e) {
       throw ServerException(
         'Unable to load customer details. Please try again.',
+      );
+    }
+  }
+
+  @override
+  Future<List<CompanyDropdownItem>> getCustomersFamily(int customerId) async {
+    try {
+      _ensureToken();
+      final response = await apiService.safeGet(
+        AppConstants.getCustomersFamilyEndpoint(customerId),
+      );
+
+      final body = response.body;
+      if (body is! Map) {
+        throw ServerException('Unexpected customers family response.');
+      }
+
+      final dropdown = CompanyDropdownResponse.fromJson(
+        Map<String, dynamic>.from(body),
+      );
+
+      if (!dropdown.isSuccess) {
+        if (_isEmptyListMessage(dropdown.message)) {
+          return const [];
+        }
+        throw ServerException(
+          dropdown.message.isEmpty
+              ? 'Unable to load family members.'
+              : dropdown.message,
+        );
+      }
+
+      return dropdown.items;
+    } on AppException catch (e) {
+      if (_isEmptyListMessage(e.message)) return const [];
+      rethrow;
+    } catch (e) {
+      throw ServerException(
+        'Unable to load family members. Please try again.',
       );
     }
   }

@@ -1,6 +1,9 @@
 import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
+import '../../../../core/widgets/glass_container.dart';
 import '../../../../data/models/line_data.dart';
 import '../../controllers/analysis_controller.dart';
 
@@ -9,122 +12,125 @@ class CanvasContainer extends GetView<AnalysisController> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            blurRadius: 10,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Obx(() {
-        if (controller.isProcessingImage.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    final theme = Theme.of(context);
 
-        final original = controller.originalImage.value;
-        final processed = controller.processedImage.value;
-
-        if (original == null) {
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.fingerprint,
-                  size: 80,
-                  color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+    return GlassContainer(
+      elevated: true,
+      borderRadius: 18,
+      padding: const EdgeInsets.all(6),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: ColoredBox(
+          color: theme.brightness == Brightness.dark
+              ? Colors.black
+              : Colors.black.withValues(alpha: 0.88),
+          child: Obx(() {
+            if (controller.isProcessingImage.value) {
+              return Center(
+                child: CircularProgressIndicator(
+                  color: theme.colorScheme.primary,
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  "No fingerprint loaded",
-                  style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        final displayedImage = (controller.showProcessed.value && processed != null)
-            ? processed
-            : original;
-
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            controller.canvasSize = Size(
-              constraints.maxWidth,
-              constraints.maxHeight,
-            );
-
-            // Calculate destination rect matching BoxFit.contain
-            double imgAspect = controller.imageOriginalSize!.width /
-                controller.imageOriginalSize!.height;
-            double canvasAspect =
-                controller.canvasSize!.width / controller.canvasSize!.height;
-
-            double drawW, drawH;
-            if (imgAspect > canvasAspect) {
-              drawW = controller.canvasSize!.width;
-              drawH = drawW / imgAspect;
-            } else {
-              drawH = controller.canvasSize!.height;
-              drawW = drawH * imgAspect;
+              );
             }
 
-            controller.imageDestRect = Rect.fromLTWH(
-              (controller.canvasSize!.width - drawW) / 2,
-              (controller.canvasSize!.height - drawH) / 2,
-              drawW,
-              drawH,
-            );
+            final original = controller.originalImage.value;
+            final processed = controller.processedImage.value;
 
-            return GestureDetector(
-              onTapDown: (details) {
-                controller.setCorePoint(details.localPosition);
-              },
-              onPanStart: (details) {
-                controller.startCurrentLine(details.localPosition);
-              },
-              onPanUpdate: (details) {
-                controller.updateCurrentLine(details.localPosition);
-              },
-              onPanEnd: (details) {
-                controller.finishCurrentLine(details.localPosition);
-              },
-              child: CustomPaint(
-                size: Size.infinite,
-                painter: FingerprintPainter(
-                  image: displayedImage,
-                  corePoint: controller.corePoint.value,
-                  lines: controller.lines,
-                  currentLine: controller.currentLine.value,
-                  destRect: controller.imageDestRect!,
+            if (original == null) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.fingerprint,
+                      size: 64,
+                      color: theme.colorScheme.primary.withValues(alpha: 0.45),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'No fingerprint loaded',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.55),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
+              );
+            }
+
+            final displayedImage =
+                (controller.showProcessed.value && processed != null)
+                    ? processed
+                    : original;
+
+            // Touch observables so Obx rebuilds while drawing.
+            controller.corePoint.value;
+            controller.lines.length;
+            controller.currentLine.value;
+
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                controller.canvasSize = Size(
+                  constraints.maxWidth,
+                  constraints.maxHeight,
+                );
+
+                final imgAspect = controller.imageOriginalSize!.width /
+                    controller.imageOriginalSize!.height;
+                final canvasAspect = controller.canvasSize!.width /
+                    controller.canvasSize!.height;
+
+                late final double drawW;
+                late final double drawH;
+                if (imgAspect > canvasAspect) {
+                  drawW = controller.canvasSize!.width;
+                  drawH = drawW / imgAspect;
+                } else {
+                  drawH = controller.canvasSize!.height;
+                  drawW = drawH * imgAspect;
+                }
+
+                controller.imageDestRect = Rect.fromLTWH(
+                  (controller.canvasSize!.width - drawW) / 2,
+                  (controller.canvasSize!.height - drawH) / 2,
+                  drawW,
+                  drawH,
+                );
+
+                return GestureDetector(
+                  onTapDown: (details) {
+                    controller.setCorePoint(details.localPosition);
+                  },
+                  onPanStart: (details) {
+                    controller.startCurrentLine(details.localPosition);
+                  },
+                  onPanUpdate: (details) {
+                    controller.updateCurrentLine(details.localPosition);
+                  },
+                  onPanEnd: (details) {
+                    controller.finishCurrentLine(details.localPosition);
+                  },
+                  child: CustomPaint(
+                    size: Size.infinite,
+                    painter: FingerprintPainter(
+                      image: displayedImage,
+                      corePoint: controller.corePoint.value,
+                      lines: List<LineData>.from(controller.lines),
+                      currentLine: controller.currentLine.value,
+                      destRect: controller.imageDestRect!,
+                    ),
+                  ),
+                );
+              },
             );
-          },
-        );
-      }),
+          }),
+        ),
+      ),
     );
   }
 }
 
 class FingerprintPainter extends CustomPainter {
-  final ui.Image image;
-  final Offset? corePoint;
-  final List<LineData> lines;
-  final LineData? currentLine;
-  final Rect destRect;
-
   FingerprintPainter({
     required this.image,
     this.corePoint,
@@ -133,9 +139,14 @@ class FingerprintPainter extends CustomPainter {
     required this.destRect,
   });
 
+  final ui.Image image;
+  final Offset? corePoint;
+  final List<LineData> lines;
+  final LineData? currentLine;
+  final Rect destRect;
+
   @override
   void paint(Canvas canvas, Size size) {
-    // Draw Background Fingerprint Image
     canvas.drawImageRect(
       image,
       Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
@@ -147,19 +158,16 @@ class FingerprintPainter extends CustomPainter {
       ..strokeWidth = 2.5
       ..style = PaintingStyle.stroke;
 
-    // Draw saved lines
-    for (var line in lines) {
+    for (final line in lines) {
       paint.color = line.color;
       canvas.drawLine(line.start, line.end, paint);
 
-      // Draw endpoint
       final endPaint = Paint()
         ..color = line.color
         ..style = PaintingStyle.fill;
       canvas.drawCircle(line.end, 6, endPaint);
       canvas.drawCircle(line.end, 8, paint..strokeWidth = 1.0);
 
-      // Draw label near endpoint if count exists
       if (line.ridgeCount != null) {
         final textPainter = TextPainter(
           text: TextSpan(
@@ -175,7 +183,6 @@ class FingerprintPainter extends CustomPainter {
         );
         textPainter.layout();
 
-        // Background box for label readability
         final textRect = Rect.fromLTWH(
           line.end.dx + 12,
           line.end.dy - 10,
@@ -191,17 +198,22 @@ class FingerprintPainter extends CustomPainter {
       }
     }
 
-    // Draw active drawing line
     if (currentLine != null) {
-      paint.color = currentLine!.color;
-      paint.strokeWidth = 2.0;
+      paint
+        ..color = currentLine!.color
+        ..strokeWidth = 2.0
+        ..style = PaintingStyle.stroke;
       canvas.drawLine(currentLine!.start, currentLine!.end, paint);
-      canvas.drawCircle(currentLine!.end, 5, paint..style = PaintingStyle.fill);
+      canvas.drawCircle(
+        currentLine!.end,
+        5,
+        Paint()
+          ..color = currentLine!.color
+          ..style = PaintingStyle.fill,
+      );
     }
 
-    // Draw Core Point
     if (corePoint != null) {
-      // Outer glow/shadow
       canvas.drawCircle(
         corePoint!,
         12,
@@ -210,24 +222,25 @@ class FingerprintPainter extends CustomPainter {
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
       );
 
-      final corePaint = Paint()
-        ..color = Colors.blue
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(corePoint!, 8, corePaint);
-
-      final coreStrokePaint = Paint()
-        ..color = Colors.white
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5;
-      canvas.drawCircle(corePoint!, 8, coreStrokePaint);
-
-      // Inner center dot
+      canvas.drawCircle(
+        corePoint!,
+        8,
+        Paint()
+          ..color = Colors.blue
+          ..style = PaintingStyle.fill,
+      );
+      canvas.drawCircle(
+        corePoint!,
+        8,
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5,
+      );
       canvas.drawCircle(corePoint!, 2, Paint()..color = Colors.white);
     }
   }
 
   @override
-  bool shouldRepaint(covariant FingerprintPainter oldDelegate) {
-    return true;
-  }
+  bool shouldRepaint(covariant FingerprintPainter oldDelegate) => true;
 }

@@ -4,6 +4,7 @@ import '../../../../core/widgets/glass_app_bar.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/gradient_background.dart';
 import '../../../../data/providers/permission_service.dart';
+import '../../../../data/models/entity_picker_result.dart';
 import '../../../../routes/app_routes.dart';
 import '../../../role_master/bindings/role_master_binding.dart';
 import '../../../role_master/views/role_master_view.dart';
@@ -329,7 +330,16 @@ class MenuTab extends GetView<MainShellController> {
                                   alpha: 0.7,
                                 ),
                               ),
-                              onTap: () => Get.toNamed(Routes.handSelector),
+                              onTap: () async {
+                                final result =
+                                    await Get.toNamed(Routes.entityPicker);
+                                if (result is EntityPickerResult) {
+                                  Get.toNamed(
+                                    Routes.handSelector,
+                                    arguments: {'entity': result},
+                                  );
+                                }
+                              },
                             ),
                           ),
                         ),
