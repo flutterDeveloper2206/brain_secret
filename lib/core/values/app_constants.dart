@@ -64,6 +64,10 @@ class AppConstants {
       'fingerprint/get-customer-fingerprints/$customerId';
   static const String updateCustomerFingerprintEndpoint =
       'fingerprint/update-customer-fingerprint';
+  static String generateAllReportsEndpoint(int customerId) =>
+      'report/generate-all-reports/$customerId';
+  static String customerReportsEndpoint(int customerId) =>
+      'report/customer-reports/$customerId';
   /// Static customer used for fingerprint add/analyze until picker exists.
   static const int defaultFingerprintCustomerId = 13;
   static const String appName = 'Brain Secret';

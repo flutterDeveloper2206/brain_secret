@@ -6,8 +6,11 @@ import '../../../data/repositories/auth_repo.dart';
 import '../../../data/repositories/auth_repo_impl.dart';
 import '../../../data/repositories/fingerprint_repo.dart';
 import '../../../data/repositories/fingerprint_repo_impl.dart';
+import '../../../data/repositories/report_repo.dart';
+import '../../../data/repositories/report_repo_impl.dart';
 import '../../home/controllers/home_controller.dart';
 import '../controllers/main_shell_controller.dart';
+import '../controllers/report_tab_controller.dart';
 
 class MainShellBinding extends Bindings {
   @override
@@ -33,6 +36,12 @@ class MainShellBinding extends Bindings {
         permanent: true,
       );
     }
+    if (!Get.isRegistered<ReportRepository>()) {
+      Get.lazyPut<ReportRepository>(
+        () => ReportRepositoryImpl(apiService: Get.find<ApiService>()),
+        fenix: true,
+      );
+    }
     Get.lazyPut<HomeController>(
       () => HomeController(
         repository: Get.find<FingerprintRepository>(),
@@ -44,6 +53,12 @@ class MainShellBinding extends Bindings {
         permissionService: Get.find<PermissionService>(),
         apiService: Get.find<ApiService>(),
       ),
+    );
+    Get.lazyPut<ReportTabController>(
+      () => ReportTabController(
+        reportRepository: Get.find<ReportRepository>(),
+      ),
+      fenix: true,
     );
   }
 }

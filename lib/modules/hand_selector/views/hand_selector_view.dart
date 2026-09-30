@@ -77,28 +77,28 @@ class HandSelectorView extends GetView<HandSelectorController> {
               ),
               child: Obx(
                     () => SegmentedButton<String>(
-                  segments: const [
+                    segments: const [
                     ButtonSegment<String>(
-                      value: 'Left',
-                      label: Text('Left Hand'),
-                      icon: Icon(Icons.pan_tool_outlined),
-                    ),
+                        value: 'Left',
+                        label: Text('Left Hand'),
+                        icon: Icon(Icons.pan_tool_outlined),
+                      ),
                     ButtonSegment<String>(
-                      value: 'Right',
-                      label: Text('Right Hand'),
-                      icon: Icon(Icons.pan_tool_outlined),
-                    ),
-                  ],
-                  selected: {activeHand.value},
-                  onSelectionChanged: (selection) {
-                    activeHand.value = selection.first;
+                        value: 'Right',
+                        label: Text('Right Hand'),
+                        icon: Icon(Icons.pan_tool_outlined),
+                      ),
+                    ],
+                    selected: {activeHand.value},
+                    onSelectionChanged: (selection) {
+                      activeHand.value = selection.first;
                     controller.selectedFinger.value = null;
-                  },
-                  style: SegmentedButton.styleFrom(
+                    },
+                    style: SegmentedButton.styleFrom(
                     selectedBackgroundColor:
                     theme.colorScheme.primary,
-                    selectedForegroundColor: Colors.white,
-                  ),
+                      selectedForegroundColor: Colors.white,
+                    ),
                 ),
               ),
             ),
@@ -152,13 +152,13 @@ class HandSelectorView extends GetView<HandSelectorController> {
             // ==================================================
             Expanded(
               child: Obx(() {
-                final isLeft = activeHand.value == 'Left';
+                      final isLeft = activeHand.value == 'Left';
 
                 final imagePath = isLeft
                     ? _leftHandAsset
                     : _rightHandAsset;
 
-                final fingerCodes = isLeft
+                      final fingerCodes = isLeft 
                     ? const [
                   'L1', // Thumb
                   'L2', // Index
@@ -198,11 +198,11 @@ class HandSelectorView extends GetView<HandSelectorController> {
                         height: imageHeight,
                         child: Stack(
                           clipBehavior: Clip.none,
-                          children: [
+                        children: [
                             // ----------------------------------
                             // PNG HAND
                             // ----------------------------------
-                            Positioned.fill(
+                          Positioned.fill(
                               child: Image.asset(
                                 imagePath,
                                 fit: BoxFit.contain,
@@ -213,7 +213,7 @@ class HandSelectorView extends GetView<HandSelectorController> {
                             // ----------------------------------
                             // FINGER TOUCH TARGETS
                             // ----------------------------------
-                            ...fingerCodes.map((code) {
+                          ...fingerCodes.map((code) {
                               final position =
                               _getFingertipPosition(
                                 code,
@@ -231,18 +231,18 @@ class HandSelectorView extends GetView<HandSelectorController> {
                               Color circleColor =
                                   theme.colorScheme.primary;
 
-                              if (isScanned) {
+                            if (isScanned) {
                                 circleColor = Colors.green;
-                              } else if (isSelected) {
+                            } else if (isSelected) {
                                 circleColor = Colors.orange;
-                              }
+                            }
 
-                              return Positioned(
+                            return Positioned(
                                 left: position.dx - 28,
                                 top: position.dy - 28,
                                 child: Material(
                                   color: Colors.transparent,
-                                  child: InkWell(
+                              child: InkWell(
                                     borderRadius:
                                     BorderRadius.circular(32),
                                     onTap: () => controller
@@ -251,23 +251,23 @@ class HandSelectorView extends GetView<HandSelectorController> {
                                       duration: const Duration(
                                         milliseconds: 180,
                                       ),
-                                      width: 56,
-                                      height: 56,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: isSelected
+                                  width: 56,
+                                  height: 56,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: isSelected 
                                             ? circleColor.withValues(
                                           alpha: 0.18,
                                         )
-                                            : Colors.transparent,
-                                        border: Border.all(
+                                        : Colors.transparent,
+                                    border: Border.all(
                                           color: circleColor,
                                           width: isSelected
                                               ? 3
                                               : 2,
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
                                             color: circleColor
                                                 .withValues(
                                               alpha: isSelected
@@ -280,10 +280,10 @@ class HandSelectorView extends GetView<HandSelectorController> {
                                             spreadRadius: isSelected
                                                 ? 1
                                                 : 0,
-                                          ),
-                                        ],
                                       ),
-                                      child: Center(
+                                    ],
+                                  ),
+                                  child: Center(
                                         child: Text(
                                           code,
                                           style: TextStyle(
@@ -293,16 +293,16 @@ class HandSelectorView extends GetView<HandSelectorController> {
                                             color: circleColor,
                                           ),
                                         ),
-                                      ),
                                     ),
                                   ),
                                 ),
-                              );
-                            }),
-                          ],
+                              ),
+                            );
+                          }),
+                        ],
                         ),
                       ),
-                    );
+                      );
                   },
                 );
               }),
@@ -321,15 +321,15 @@ class HandSelectorView extends GetView<HandSelectorController> {
                   width: double.infinity,
                   height: 58,
                   child: ElevatedButton.icon(
-                    onPressed: selected == null
-                        ? null
+                    onPressed: selected == null 
+                        ? null 
                         : controller.startScanning,
                     icon: const Icon(
                       Icons.fingerprint,
                       size: 28,
                     ),
                     label: Text(
-                      selected != null
+                      selected != null 
                           ? 'Start Fingerprint Scan ($selected)'
                           : 'Select Finger Above',
                       style: const TextStyle(

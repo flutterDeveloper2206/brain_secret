@@ -7,12 +7,16 @@ import '../modules/device_scan/bindings/device_scan_binding.dart';
 import '../modules/device_scan/views/device_scan_view.dart';
 import '../modules/entity_picker/bindings/entity_picker_binding.dart';
 import '../modules/entity_picker/views/entity_picker_view.dart';
+import '../modules/generate_report/bindings/generate_report_binding.dart';
+import '../modules/generate_report/views/generate_report_view.dart';
 import '../modules/hand_selector/bindings/hand_selector_binding.dart';
 import '../modules/hand_selector/views/hand_selector_view.dart';
 import '../modules/login/bindings/login_binding.dart';
 import '../modules/login/views/login_view.dart';
 import '../modules/main_shell/bindings/main_shell_binding.dart';
 import '../modules/main_shell/views/main_shell_view.dart';
+import '../modules/report_detail/bindings/report_detail_binding.dart';
+import '../modules/report_detail/views/report_detail_view.dart';
 import '../modules/splash/bindings/splash_binding.dart';
 import '../modules/splash/views/splash_view.dart';
 import '../modules/customer_profile/bindings/customer_profile_binding.dart';
@@ -165,6 +169,16 @@ class AppPages {
       name: Routes.entityPicker,
       page: () => const EntityPickerView(),
       binding: EntityPickerBinding(),
+    ),
+    GetPage(
+      name: Routes.generateReport,
+      page: () => const GenerateReportView(),
+      binding: GenerateReportBinding(),
+    ),
+    GetPage(
+      name: Routes.reportDetail,
+      page: () => const ReportDetailView(),
+      binding: ReportDetailBinding(),
     ),
   ];
 }

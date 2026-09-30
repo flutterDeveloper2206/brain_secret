@@ -379,6 +379,42 @@ class MenuTab extends GetView<MainShellController> {
                             color: Colors.transparent,
                             child: ListTile(
                               leading: Icon(
+                                Icons.assessment_outlined,
+                                color: theme.colorScheme.primary,
+                              ),
+                              title: Text(
+                                'Generate Report',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              trailing: Icon(
+                                Icons.chevron_right,
+                                color: theme.colorScheme.primary.withValues(
+                                  alpha: 0.7,
+                                ),
+                              ),
+                              onTap: () async {
+                                final result =
+                                    await Get.toNamed(Routes.entityPicker);
+                                if (result is EntityPickerResult) {
+                                  Get.toNamed(
+                                    Routes.generateReport,
+                                    arguments: {'entity': result},
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                        GlassContainer(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          borderRadius: 18,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: ListTile(
+                              leading: Icon(
                                 Icons.settings_outlined,
                                 color: theme.colorScheme.primary,
                               ),

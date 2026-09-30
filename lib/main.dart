@@ -67,6 +67,8 @@ class RidgeCounterApp extends StatelessWidget {
       themeMode: themeController.themeMode.value,
       initialRoute: AppPages.initial,
       getPages: AppPages.routes,
+      defaultTransition: Transition.cupertino,
+      transitionDuration: const Duration(milliseconds: 340),
     );
   }
 }

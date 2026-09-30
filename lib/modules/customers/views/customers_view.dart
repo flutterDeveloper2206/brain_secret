@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/values/app_constants.dart';
 import '../../../core/widgets/app_avatar.dart';
-import '../../../core/widgets/app_searchable_dropdown_field.dart';
+import '../../../core/widgets/app_inline_dropdown_field.dart';
 import '../../../core/widgets/glass_app_bar.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/gradient_background.dart';
@@ -230,7 +230,7 @@ class _CompanyFranchiseFilters extends GetView<CustomersController> {
 
       return Column(
         children: [
-          AppSearchableDropdownField<int>(
+          AppInlineDropdownField<int>(
             label: 'Company',
             hint: 'Select company',
             prefixIcon: Icons.apartment_outlined,
@@ -238,12 +238,11 @@ class _CompanyFranchiseFilters extends GetView<CustomersController> {
             displayLabel: controller.selectedCompanyLabel,
             items: controller.companyDropdownItems,
             isLoading: controller.isLoadingCompanies.value,
-            loadItems: controller.loadCompanies,
-            searchHint: 'Search company…',
+            emptyMessage: 'No companies found',
             onChanged: controller.onCompanySelected,
           ),
           const SizedBox(height: 10),
-          AppSearchableDropdownField<int>(
+          AppInlineDropdownField<int>(
             label: 'Franchise',
             hint: hasCompany ? 'Select franchise' : 'Select company first',
             prefixIcon: Icons.storefront_outlined,
@@ -252,8 +251,6 @@ class _CompanyFranchiseFilters extends GetView<CustomersController> {
             items: controller.franchiseDropdownItems,
             isLoading: controller.isLoadingFranchises.value,
             enabled: hasCompany,
-            loadItems: hasCompany ? controller.loadFranchisesSheet : null,
-            searchHint: 'Search franchise…',
             emptyMessage: hasCompany
                 ? 'No franchises for this company'
                 : 'Select a company first',

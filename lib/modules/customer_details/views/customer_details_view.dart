@@ -614,6 +614,7 @@ class _BottomActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppActionButtonBar(
+      breakpoint: 0,
       children: [
         AppActionButton.filled(
           label: 'Edit',
